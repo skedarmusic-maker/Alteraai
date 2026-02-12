@@ -1,0 +1,205 @@
+.mass-edit-container {
+    padding: 20px;
+    background: #0f0f0f;
+    min-height: 100vh;
+    color: white;
+    padding-bottom: 100px;
+}
+
+.mass-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.mass-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* Selection List */
+.selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.group-date {
+    color: var(--color-primary-pink);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.selection-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+}
+
+.selection-item.selected {
+    border-color: var(--color-primary-purple);
+    background: rgba(106, 10, 170, 0.1);
+}
+
+.checkbox-ring {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selection-item.selected .checkbox-ring {
+    border-color: var(--color-primary-purple);
+}
+
+.checkbox-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--color-primary-purple);
+    border-radius: 2px;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-time {
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.item-store {
+    font-weight: 600;
+}
+
+/* Table View */
+.table-container {
+    overflow-x: auto;
+}
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+}
+
+.excel-table th,
+.excel-table td {
+    border: 1px solid #444;
+    padding: 10px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.excel-table th {
+    background: black;
+    color: white;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.excel-table th.highlight-header {
+    background: #FFD700;
+    /* Yellow */
+    color: black;
+}
+
+.excel-table td.highlight-cell {
+    background: rgba(255, 215, 0, 0.1);
+    /* Subtle yellow tint */
+}
+
+.cell-date {
+    font-weight: 700;
+    color: var(--color-primary-pink);
+}
+
+.cell-time {
+    color: #ccc;
+    font-size: 0.8rem;
+}
+
+.excel-table select,
+.excel-table textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: inherit;
+}
+
+.excel-table select option {
+    background: #1a1a1a;
+}
+
+.excel-table input:focus,
+.excel-table select:focus,
+.excel-table textarea:focus {
+    outline: 1px solid var(--color-primary-purple);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Footer */
+.mass-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.mass-actions {
+    flex-wrap: wrap;
+}
+
+.primary-btn {
+    flex: 1;
+    min-width: 200px;
+    justify-content: center;
+    background: var(--color-primary-gradient);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(106, 10, 170, 0.4);
+}
+
+.primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}

@@ -1,0 +1,65 @@
+:root {
+  /* Primary Colors */
+  --color-primary-pink: #FF006C;
+  --color-primary-purple: #6A0AAA;
+  --color-primary-orange: #FD5003;
+  --color-black: #0F0F0F;
+  --color-white: #FCFCFC;
+
+  /* Secondary Colors */
+  --color-sec-pink-light: #FFB6E3;
+  --color-sec-pink-med: #CC649F;
+  --color-sec-pink-hot: #FF76AE;
+  --color-sec-purple-light: #C5BDFF;
+  --color-sec-purple-med: #685AAF;
+  --color-sec-purple-vivid: #9D81FC;
+  --color-sec-orange-light: #F9A58F;
+  --color-sec-orange-med: #E47855;
+  --color-sec-orange-vivid: #FF8A5C;
+
+  /* Spacing & Layout */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Fonts */
+  --font-heading: 'Comfortaa', display;
+  --font-body: 'Montserrat', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-black);
+  color: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
