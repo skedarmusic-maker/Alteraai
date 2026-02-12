@@ -30,6 +30,6 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ./public_html/
-          local-dir: ./dist/
-          dangerous-clean-slate: true # CUIDADO: Isso apaga tudo na pasta de destino que não estiver na pasta de origem.
+          server-dir: ./
+          local-dir: dist/
+          dangerous-clean-slate: false # Desativado temporariamente para segurança até corrigirmos a estrutura
