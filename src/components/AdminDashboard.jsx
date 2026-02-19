@@ -113,7 +113,12 @@ export default function AdminDashboard({ onBack }) {
                     const client = getRowValue(row, 'CLIENTE', 'CLIENT');
                     if (store && client) {
                         const storeStr = String(store).trim().toUpperCase();
-                        mapping[storeStr] = String(client).trim();
+                        const clientStr = String(client).trim();
+                        // Ignorar marcos temporários de erro do Excel (#N/D, #REF!, etc)
+                        const isExcelError = clientStr.startsWith('#') || clientStr === 'N/A' || clientStr === '';
+                        if (!isExcelError) {
+                            mapping[storeStr] = clientStr;
+                        }
                     }
                 });
 
@@ -250,7 +255,9 @@ export default function AdminDashboard({ onBack }) {
         const unmatchedLog = new Set();
 
         filtered.forEach(item => {
-            const name = item.consultant || 'Desconhecido';
+            const rawName = item.consultant || 'Desconhecido';
+            // Resumir para o primeiro nome
+            const name = rawName.split(' ')[0].toUpperCase();
             consultantCount[name] = (consultantCount[name] || 0) + 1;
 
             const type = item.type || 'Outros';
@@ -278,10 +285,10 @@ export default function AdminDashboard({ onBack }) {
         // Update Unmatched Logic
         setUnmatchedStores(Array.from(unmatchedLog).slice(0, 50));
 
-        const byConsultant = Object.keys(consultantCount).map(k => ({
+        const byConsultantAll = Object.keys(consultantCount).map(k => ({
             name: k,
             value: consultantCount[k]
-        })).sort((a, b) => b.value - a.value).slice(0, 5);
+        })).sort((a, b) => b.value - a.value);
 
         const byType = Object.keys(typeCount).map(k => ({
             name: k,
@@ -291,12 +298,13 @@ export default function AdminDashboard({ onBack }) {
         const byClient = Object.keys(clientCount).map(k => ({
             name: k,
             value: clientCount[k]
-        })).sort((a, b) => b.value - a.value).slice(0, 5);
+        })).sort((a, b) => b.value - a.value).slice(0, 10); // Aumentar para 10
 
         setStats({
             total: filtered.length,
             byType,
-            byConsultant,
+            byConsultant: byConsultantAll.slice(0, 10), // Top 10 para o gráfico
+            totalConsultants: byConsultantAll.length, // Total real para o KPI
             byClient,
             filteredLogs: filtered
         });
@@ -455,7 +463,7 @@ export default function AdminDashboard({ onBack }) {
                     <div className="kpi-icon"><Users size={24} color="#6A0AAA" /></div>
                     <div className="kpi-info">
                         <span className="kpi-label">Consultores no Período</span>
-                        <span className="kpi-value">{stats.byConsultant.length}</span>
+                        <span className="kpi-value">{stats.totalConsultants || 0}</span>
                     </div>
                 </div>
             </div>
@@ -615,7 +623,7 @@ export default function AdminDashboard({ onBack }) {
                                 {paginatedLogs.map((log, idx) => (
                                     <tr key={idx} className={log.status === 'Feito' ? 'row-done' : ''}>
                                         <td>{new Date(log.date || Date.now()).toLocaleDateString()}</td>
-                                        <td className="highlight-text">{log.consultant}</td>
+                                        <td className="highlight-text">{(log.consultant || '').split(' ')[0]}</td>
                                         <td>
                                             <span className={`badge badge-${(log.type || '').split(' ')[0].toLowerCase()}`}>
                                                 {log.type}
