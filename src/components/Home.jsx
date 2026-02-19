@@ -52,6 +52,9 @@ export default function Home({ user, onLogout }) {
                     }
                 });
 
+                const VERSION = "1.0.6-SUPABASE-FIX";
+                console.log(`[${VERSION}] 🔄 Carregando para:`, user);
+
                 // NEW: Fetch from Supabase instead of CSV
                 console.log("🔍 Buscando visitas no Supabase...");
                 const userUpper = (user || '').toUpperCase().trim();
@@ -62,7 +65,7 @@ export default function Home({ user, onLogout }) {
 
                 if (supabaseError) throw supabaseError;
 
-                console.log(`[${new Date().toLocaleTimeString()}] ✅ ${supabaseVisits.length} visitas carregadas para ${userUpper}.`);
+                console.log(`[${VERSION}] ✅ ${supabaseVisits.length} visitas carregadas para ${userUpper}.`);
 
                 // Debug específico para hoje
                 const todayIso = format(new Date(), 'yyyy-MM-dd');
@@ -117,8 +120,8 @@ export default function Home({ user, onLogout }) {
                 const sortedGroups = Object.keys(grouped).map(dateStr => {
                     try {
                         const dateObj = parse(dateStr, 'dd/MM/yyyy', new Date());
-                        const now = new Date();
-                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
 
                         if (dateObj < today) return null;
 
