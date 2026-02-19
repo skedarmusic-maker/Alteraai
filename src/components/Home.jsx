@@ -81,7 +81,7 @@ export default function Home({ user, onLogout }) {
                     havanFound: !!havanVisit,
                     havanData: havanVisit,
                     systemDate: new Date().toString(),
-                    today Midnight: todayForDebug.toString()
+                    "today Midnight": todayForDebug.toString()
                 });
 
                 // Debug específico para hoje
