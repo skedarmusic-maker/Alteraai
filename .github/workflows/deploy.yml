@@ -32,4 +32,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: public_html/
           local-dir: dist/
-          dangerous-clean-slate: true # Isso vai garantir que a public_html fique limpa e apenas com os arquivos novos.
+          dangerous-clean-slate: false # Desativando temporariamente para evitar timeout ao deletar muitos arquivos
+          timeout: 60000 # 60 segundos por arquivo

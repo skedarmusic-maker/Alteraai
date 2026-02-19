@@ -62,7 +62,14 @@ export default function Home({ user, onLogout }) {
 
                 if (supabaseError) throw supabaseError;
 
-                console.log(`✅ Sucesso: ${supabaseVisits.length} visitas carregadas do banco de dados para ${userUpper}.`);
+                console.log(`[${new Date().toLocaleTimeString()}] ✅ ${supabaseVisits.length} visitas carregadas para ${userUpper}.`);
+
+                // Debug específico para hoje
+                const todayIso = format(new Date(), 'yyyy-MM-dd');
+                const todayVisits = supabaseVisits.filter(v => v.data === todayIso);
+                if (todayVisits.length > 0) {
+                    console.log("📍 Visitas de hoje detectadas:", todayVisits.map(v => `${v.loja} (${v.check_in})`).join(" | "));
+                }
 
                 // Group by Date
                 const grouped = {};
