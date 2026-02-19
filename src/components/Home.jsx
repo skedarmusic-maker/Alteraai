@@ -28,17 +28,19 @@ export default function Home({ user, onLogout }) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const data = await parseCSV('/JP_JANEIRO 2026.csv');
+                // Import dynamicamente para evitar problemas de escopo se necessário
+                const { supabase } = await import('../utils/supabase');
+
+                // Fetch stores base from CSV (keep this for now as it's large and static)
                 const storesData = await parseCSV('/BASE AC NOVA.csv');
 
-                // Build Store to Client Map from all stores in base
+                // Build Store to Client Map
                 const storeClientMap = {};
                 const getValue = (row, ...candidates) => {
                     const keys = Object.keys(row);
                     for (const candidate of candidates) {
                         const match = keys.find(k => k.trim().toUpperCase() === candidate);
                         if (match) return row[match];
-                        // partial match fallback
                         const partial = keys.find(k => k.trim().toUpperCase().includes(candidate));
                         if (partial) return row[partial];
                     }
@@ -53,45 +55,43 @@ export default function Home({ user, onLogout }) {
                     }
                 });
 
-                // Filter by consultant (loose match)
+                // NEW: Fetch from Supabase instead of CSV
                 const userUpper = user.toUpperCase().trim();
-                const myVisits = data.filter(row => {
-                    const consul = (getValue(row, 'CONSULTOR') || '').toUpperCase().trim();
-                    return consul && consul.includes(userUpper);
-                });
+                const { data: supabaseVisits, error: supabaseError } = await supabase
+                    .from('visits')
+                    .select('*')
+                    .ilike('consultor', `%${userUpper}%`);
+
+                if (supabaseError) throw supabaseError;
 
                 // Group by Date
                 const grouped = {};
-                myVisits.forEach(visit => {
-                    const dateStr = getValue(visit, 'DATA');
-                    if (!dateStr) return;
+                supabaseVisits.forEach(visit => {
+                    // Convert yyyy-mm-dd from DB to dd/mm/yyyy for UI compatibility if needed
+                    // but we'll use a standardized date object later
+                    const dateObj = parse(visit.data, 'yyyy-MM-dd', new Date());
+                    const dateStr = format(dateObj, 'dd/MM/yyyy');
+
                     if (!grouped[dateStr]) grouped[dateStr] = [];
 
                     grouped[dateStr].push({
                         date: dateStr,
-                        weekday: getValue(visit, 'DIA DA SEMANA', 'DIA'),
-                        store: getValue(visit, 'LOJA'),
-                        client: getValue(visit, 'CLIENTE'),
-                        checkIn: getValue(visit, 'CHECK IN', 'ENTRADA'),
-                        checkOut: getValue(visit, 'CHECK OUT', 'SAIDA')
+                        weekday: visit.dia_da_semana || '',
+                        store: visit.loja,
+                        client: visit.cliente,
+                        checkIn: visit.check_in,
+                        checkOut: visit.check_out,
+                        id: visit.id // Keep DB ID
                     });
                 });
 
-                // Inject New Inclusions from LocalStorage
+                // Inject New Inclusions from LocalStorage (Fallback for offline/temp)
                 const savedInclusions = JSON.parse(localStorage.getItem('newInclusions') || '[]');
                 savedInclusions.forEach(inc => {
                     if (inc.consultant !== user) return;
-
-                    // We only add to existing dates for now (as per "in that day" requirement)
                     if (grouped[inc.date]) {
-                        // Inherit weekday from existing visits if available
                         const weekday = grouped[inc.date][0]?.weekday || '';
-
-                        // Lookup Client
-                        let client = '';
-                        if (storeClientMap[inc.store.trim().toUpperCase()]) {
-                            client = storeClientMap[inc.store.trim().toUpperCase()];
-                        }
+                        let client = storeClientMap[inc.store.trim().toUpperCase()] || '';
 
                         grouped[inc.date].push({
                             date: inc.date,
@@ -100,7 +100,7 @@ export default function Home({ user, onLogout }) {
                             client: client,
                             checkIn: inc.checkIn,
                             checkOut: inc.checkOut,
-                            isNewInclusion: true, // Marker for styling if needed
+                            isNewInclusion: true,
                             reason: inc.reason
                         });
                     }
@@ -113,11 +113,8 @@ export default function Home({ user, onLogout }) {
                         const now = new Date();
                         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-                        if (dateObj < today) {
-                            return null;
-                        }
+                        if (dateObj < today) return null;
 
-                        // Check pending requests and inject newClient
                         const visitsWithFlags = grouped[dateStr].map(v => {
                             const visitKey = `${dateStr}-${v.store}`;
                             const pendingTime = localStorage.getItem(`pendingTimeChange-${visitKey}`);
@@ -127,12 +124,9 @@ export default function Home({ user, onLogout }) {
                             if (pendingJP) {
                                 try {
                                     pendingData = JSON.parse(pendingJP);
-                                    // Inject New Client logic
                                     if (pendingData && pendingData.newStore) {
                                         const mappedClient = storeClientMap[pendingData.newStore.trim().toUpperCase()];
-                                        if (mappedClient) {
-                                            pendingData.newClient = mappedClient;
-                                        }
+                                        if (mappedClient) pendingData.newClient = mappedClient;
                                     }
                                 } catch (e) { }
                             }
@@ -147,18 +141,12 @@ export default function Home({ user, onLogout }) {
                         return {
                             dateStr,
                             dateObj,
-                            visits: visitsWithFlags.sort((a, b) => {
-                                const timeA = a.checkIn || '00:00';
-                                const timeB = b.checkIn || '00:00';
-                                return timeA.localeCompare(timeB);
-                            })
+                            visits: visitsWithFlags.sort((a, b) => (a.checkIn || '00:00').localeCompare(b.checkIn || '00:00'))
                         };
-                    } catch (e) {
-                        return null;
-                    }
+                    } catch (e) { return null; }
                 }).filter(Boolean).sort((a, b) => compareAsc(a.dateObj, b.dateObj));
 
-                // Extract unique stores
+                // Extract unique stores for the user
                 const stores = new Set();
                 storesData.forEach(row => {
                     const consul = getValue(row, 'CONSULTOR');
@@ -168,11 +156,9 @@ export default function Home({ user, onLogout }) {
                     }
                 });
 
-                // Fallback for stores
                 if (stores.size === 0) {
-                    myVisits.forEach(v => {
-                        const storeName = getValue(v, 'LOJA');
-                        if (storeName) stores.add(storeName.trim());
+                    supabaseVisits.forEach(v => {
+                        if (v.loja) stores.add(v.loja.trim());
                     });
                 }
 
@@ -180,7 +166,7 @@ export default function Home({ user, onLogout }) {
                 setVisitsByDate(sortedGroups);
                 setLoading(false);
             } catch (err) {
-                console.error("Failed to load schedule", err);
+                console.error("Failed to load schedule from Supabase", err);
                 setLoading(false);
             }
         };
