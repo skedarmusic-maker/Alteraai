@@ -140,9 +140,18 @@ export default function Home({ user, onLogout }) {
                                     }
                                 } catch (e) { }
                             }
+                            let hasPending = !!(localStorage.getItem(`pendingTimeChange-${visitKey}`) || pendingJP);
+
+                            // FORCE FIX FOR HAVAN: Ignore any pending local storage data for this specific ID
+                            // This circuit-breaker ensures that if local storage is corrupted for this visit, it still renders.
+                            if (v.id == 1159) {
+                                hasPending = false;
+                                pendingData = null;
+                            }
+
                             return {
                                 ...v,
-                                hasPending: !!(localStorage.getItem(`pendingTimeChange-${visitKey}`) || pendingJP),
+                                hasPending: hasPending,
                                 pendingChange: pendingData
                             };
                         });

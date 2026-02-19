@@ -37,7 +37,7 @@ export default function DateCard({ date, visits, isToday, onSelectVisit, onAddVi
             <div className="visits-list">
                 {visits.map((visit, index) => (
                     <div
-                        key={index}
+                        key={visit.id || index}
                         className="visit-item"
                         onClick={() => onSelectVisit(visit)}
                     >
