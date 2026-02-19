@@ -33,6 +33,6 @@ jobs:
           server-dir: public_html/
           local-dir: dist/
           port: 21
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
           timeout: 120000 # 120 segundos por arquivo
 
