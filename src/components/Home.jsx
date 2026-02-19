@@ -68,14 +68,24 @@ export default function Home({ user, onLogout }) {
                     rawIds: supabaseVisits.map(v => v.id).join(', ')
                 });
 
-                // Group by Date
+                // Group by Date - MANUAL PARSING FOR BUILD RELIABILITY
                 const grouped = {};
                 supabaseVisits.forEach(visit => {
                     try {
-                        const dateStr = format(parse(visit.data, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy');
-                        if (!grouped[dateStr]) grouped[dateStr] = [];
-                        grouped[dateStr].push({
-                            date: dateStr,
+                        let dObj;
+                        if (visit.data.includes('-')) {
+                            const [y, m, d] = visit.data.split('-').map(Number);
+                            dObj = new Date(y, m - 1, d);
+                        } else {
+                            const [d, m, y] = visit.data.split('/').map(Number);
+                            dObj = new Date(y, m - 1, d);
+                        }
+                        dObj.setHours(0, 0, 0, 0);
+                        const dStr = format(dObj, 'dd/MM/yyyy');
+
+                        if (!grouped[dStr]) grouped[dStr] = [];
+                        grouped[dStr].push({
+                            date: dStr,
                             weekday: (visit.dia_da_semana || '').trim(),
                             store: (visit.loja || '').trim(),
                             client: (visit.cliente || '').trim(),
@@ -83,9 +93,7 @@ export default function Home({ user, onLogout }) {
                             checkOut: (visit.check_out || '00:00').trim(),
                             id: visit.id
                         });
-                    } catch (e) {
-                        console.error("Erro na linha:", visit.id);
-                    }
+                    } catch (e) { console.error("Err ID:", visit.id); }
                 });
 
                 // Inject New Inclusions
@@ -108,13 +116,17 @@ export default function Home({ user, onLogout }) {
                     }
                 });
 
-                // Convert to array and sort
-                const now = new Date();
-                const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                // Final Sort and Filter
+                const todayMidnight = new Date();
+                todayMidnight.setHours(0, 0, 0, 0);
+
                 const sortedGroups = Object.keys(grouped).map(dateStr => {
                     try {
-                        const dateObj = parse(dateStr, 'dd/MM/yyyy', new Date());
-                        if (dateObj < todayMidnight) return null;
+                        const [d, m, y] = dateStr.split('/').map(Number);
+                        const dateObj = new Date(y, m - 1, d);
+                        dateObj.setHours(0, 0, 0, 0);
+
+                        if (dateObj.getTime() < todayMidnight.getTime()) return null;
 
                         const visitsWithFlags = grouped[dateStr].map(v => {
                             const visitKey = `${dateStr}-${v.store}`;
@@ -140,7 +152,7 @@ export default function Home({ user, onLogout }) {
                             visits: visitsWithFlags.sort((a, b) => a.checkIn.localeCompare(b.checkIn))
                         };
                     } catch (e) { return null; }
-                }).filter(Boolean).sort((a, b) => compareAsc(a.dateObj, b.dateObj));
+                }).filter(Boolean).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
                 // Extract unique stores for user modal
                 const stores = new Set();
@@ -195,27 +207,25 @@ export default function Home({ user, onLogout }) {
             {/* DEBUG OVERLAY */}
             {debugInfo && (
                 <div style={{
-                    background: '#333',
+                    background: '#111',
                     color: '#0f0',
                     padding: '10px',
-                    fontSize: '10px',
+                    fontSize: '11px',
                     position: 'fixed',
                     top: 0,
                     left: 0,
                     right: 0,
                     zIndex: 9999,
-                    borderBottom: '2px solid red',
+                    borderBottom: '2px solid cyan',
                     overflowY: 'auto',
-                    maxHeight: '150px'
+                    maxHeight: '200px',
+                    fontFamily: 'monospace'
                 }}>
-                    <strong>DEBUG MODE {debugInfo.v}</strong><br />
-                    User: {debugInfo.user} | Total: {debugInfo.total}<br />
+                    <strong>ULTIMATE DEBUG v1.1.0</strong><br />
                     HAVAN (1159) Found? {debugInfo.havanFound ? "YES ✅" : "NO ❌"}<br />
-                    {debugInfo.havanFound && (
-                        <div>Details: {debugInfo.havanDetails}</div>
-                    )}
-                    Today Ref: {debugInfo.today}<br />
-                    IDs: {debugInfo.rawIds}
+                    Groups: {visitsByDate.map(g => `${g.dateStr}(${g.visits.length})`).join(' | ')}<br />
+                    Today IDs in State: {visitsByDate.find(g => g.dateStr.includes('19/02'))?.visits.map(v => v.id).join(', ') || 'NONE'}<br />
+                    Ref Date: {debugInfo.today}
                 </div>
             )}
 
