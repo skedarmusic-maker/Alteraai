@@ -35,95 +35,117 @@ export default function DateCard({ date, visits, isToday, onSelectVisit, onAddVi
             </div>
 
             <div className="visits-list">
-                {visits.map((visit, index) => (
-                    <div
-                        key={visit.id || index}
-                        className="visit-item"
-                        onClick={() => onSelectVisit(visit)}
-                    >
-                        {visit.hasPending && <div className="visit-dot" />}
+                {visits.map((visit, index) => {
+                    // BRUTE FORCE DEBUG FOR HAVAN
+                    if (String(visit.id) === '1159' || visit.store?.includes('HAVAN')) {
+                        return (
+                            <div key={visit.id || index} style={{
+                                background: 'white',
+                                border: '5px solid red',
+                                color: 'black',
+                                padding: '15px',
+                                margin: '10px 0',
+                                fontWeight: 'bold',
+                                fontSize: '16px',
+                                zIndex: 99999
+                            }} onClick={() => onSelectVisit(visit)}>
+                                🚨 VISITA HAVAN FORÇADA 🚨<br />
+                                {visit.store}<br />
+                                {visit.checkIn} - {visit.checkOut}
+                            </div>
+                        );
+                    }
 
-                        {/* Logic for swapped store */}
-                        {visit.pendingChange && visit.pendingChange.newStore ? (
-                            <div className="visit-swapped-container">
-                                <div className="swap-indicator-wrapper">
-                                    <ArrowUpDown size={20} className="swap-icon" />
-                                </div>
-                                <div className="swapped-details">
-                                    {/* Original Store & Time */}
-                                    <div className="swapped-row original-row">
-                                        <div className="visit-time dimmed-time">
-                                            <Clock size={14} />
-                                            <span>{visit.checkIn} - {visit.checkOut}</span>
+                    return (
+                        <div
+                            key={visit.id || index}
+                            className="visit-item"
+                            onClick={() => onSelectVisit(visit)}
+                        >
+                            {visit.hasPending && <div className="visit-dot" />}
+
+                            {/* Logic for swapped store */}
+                            {visit.pendingChange && visit.pendingChange.newStore ? (
+                                <div className="visit-swapped-container">
+                                    <div className="swap-indicator-wrapper">
+                                        <ArrowUpDown size={20} className="swap-icon" />
+                                    </div>
+                                    <div className="swapped-details">
+                                        {/* Original Store & Time */}
+                                        <div className="swapped-row original-row">
+                                            <div className="visit-time dimmed-time">
+                                                <Clock size={14} />
+                                                <span>{visit.checkIn} - {visit.checkOut}</span>
+                                            </div>
+                                            <div className="visit-store original-store-dimmed">
+                                                <Building size={14} className="icon-inline" />
+                                                {visit.store}
+                                            </div>
                                         </div>
-                                        <div className="visit-store original-store-dimmed">
+
+                                        {/* New Store & Time */}
+                                        <div className="swapped-row new-row">
+                                            <div className="visit-time new-time-highlight">
+                                                <Clock size={14} />
+                                                <span>
+                                                    {visit.pendingChange.newTime ? (() => {
+                                                        // Try to calculate end time based on duration
+                                                        try {
+                                                            const [origStartH, origStartM] = visit.checkIn.split(':').map(Number);
+                                                            const [origEndH, origEndM] = visit.checkOut.split(':').map(Number);
+                                                            const durationMinutes = (origEndH * 60 + origEndM) - (origStartH * 60 + origStartM);
+
+                                                            const [newStartH, newStartM] = visit.pendingChange.newTime.split(':').map(Number);
+                                                            const newEndTotal = (newStartH * 60 + newStartM) + durationMinutes;
+                                                            const newEndH = Math.floor(newEndTotal / 60) % 24;
+                                                            const newEndM = newEndTotal % 60;
+
+                                                            const newEndStr = `${String(newEndH).padStart(2, '0')}:${String(newEndM).padStart(2, '0')}`;
+                                                            return `${visit.pendingChange.newTime} - ${newEndStr}`;
+                                                        } catch (e) {
+                                                            return visit.pendingChange.newTime;
+                                                        }
+                                                    })() : `${visit.checkIn} - ${visit.checkOut}`}
+                                                </span>
+                                            </div>
+                                            <div className="visit-store new-store-highlight">
+                                                <Building size={14} className="icon-inline" />
+                                                {visit.pendingChange.newStore}
+                                            </div>
+                                        </div>
+
+                                        {(visit.pendingChange.newClient || visit.client) && (
+                                            <p className="visit-client" style={{ marginTop: '8px', paddingLeft: '0' }}>
+                                                <MapPin size={12} className="icon-inline" />
+                                                {visit.pendingChange.newClient || visit.client}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                // PROFOUND: Standard Layout
+                                <>
+                                    <div className="visit-time">
+                                        <Clock size={14} />
+                                        <span>{visit.checkIn} - {visit.checkOut}</span>
+                                    </div>
+                                    <div className="visit-details">
+                                        <h3 className="visit-store">
                                             <Building size={14} className="icon-inline" />
                                             {visit.store}
-                                        </div>
+                                        </h3>
+                                        {visit.client && (
+                                            <p className="visit-client">
+                                                <MapPin size={12} className="icon-inline" />
+                                                {visit.client}
+                                            </p>
+                                        )}
                                     </div>
-
-                                    {/* New Store & Time */}
-                                    <div className="swapped-row new-row">
-                                        <div className="visit-time new-time-highlight">
-                                            <Clock size={14} />
-                                            <span>
-                                                {visit.pendingChange.newTime ? (() => {
-                                                    // Try to calculate end time based on duration
-                                                    try {
-                                                        const [origStartH, origStartM] = visit.checkIn.split(':').map(Number);
-                                                        const [origEndH, origEndM] = visit.checkOut.split(':').map(Number);
-                                                        const durationMinutes = (origEndH * 60 + origEndM) - (origStartH * 60 + origStartM);
-
-                                                        const [newStartH, newStartM] = visit.pendingChange.newTime.split(':').map(Number);
-                                                        const newEndTotal = (newStartH * 60 + newStartM) + durationMinutes;
-                                                        const newEndH = Math.floor(newEndTotal / 60) % 24;
-                                                        const newEndM = newEndTotal % 60;
-
-                                                        const newEndStr = `${String(newEndH).padStart(2, '0')}:${String(newEndM).padStart(2, '0')}`;
-                                                        return `${visit.pendingChange.newTime} - ${newEndStr}`;
-                                                    } catch (e) {
-                                                        return visit.pendingChange.newTime;
-                                                    }
-                                                })() : `${visit.checkIn} - ${visit.checkOut}`}
-                                            </span>
-                                        </div>
-                                        <div className="visit-store new-store-highlight">
-                                            <Building size={14} className="icon-inline" />
-                                            {visit.pendingChange.newStore}
-                                        </div>
-                                    </div>
-
-                                    {(visit.pendingChange.newClient || visit.client) && (
-                                        <p className="visit-client" style={{ marginTop: '8px', paddingLeft: '0' }}>
-                                            <MapPin size={12} className="icon-inline" />
-                                            {visit.pendingChange.newClient || visit.client}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            // PROFOUND: Standard Layout
-                            <>
-                                <div className="visit-time">
-                                    <Clock size={14} />
-                                    <span>{visit.checkIn} - {visit.checkOut}</span>
-                                </div>
-                                <div className="visit-details">
-                                    <h3 className="visit-store">
-                                        <Building size={14} className="icon-inline" />
-                                        {visit.store}
-                                    </h3>
-                                    {visit.client && (
-                                        <p className="visit-client">
-                                            <MapPin size={12} className="icon-inline" />
-                                            {visit.client}
-                                        </p>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                ))}
+                                </>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         </motion.div >
     );
