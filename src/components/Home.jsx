@@ -25,6 +25,9 @@ export default function Home({ user, onLogout }) {
     const ADMINS = ['GABRIEL', 'ANDRE', 'GABRIEL AMORIM', 'MASTERPRO2026', 'MASTER', 'SMASTERPRO'];
     const isAdmin = ADMINS.includes(user?.toUpperCase());
 
+    // DEBUG STATE
+    const [debugInfo, setDebugInfo] = useState(null);
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -52,7 +55,7 @@ export default function Home({ user, onLogout }) {
                     }
                 });
 
-                const VERSION = "1.0.6-SUPABASE-FIX";
+                const VERSION = "1.0.7-DEBUG-UI";
                 console.log(`[${VERSION}] 🔄 Carregando para:`, user);
 
                 // NEW: Fetch from Supabase instead of CSV
@@ -66,6 +69,20 @@ export default function Home({ user, onLogout }) {
                 if (supabaseError) throw supabaseError;
 
                 console.log(`[${VERSION}] ✅ ${supabaseVisits.length} visitas carregadas para ${userUpper}.`);
+
+                // Capture Debug Info
+                const havanVisit = supabaseVisits.find(v => v.id === 1159);
+                const todayForDebug = new Date();
+                todayForDebug.setHours(0, 0, 0, 0);
+
+                setDebugInfo({
+                    totalVisits: supabaseVisits.length,
+                    user: userUpper,
+                    havanFound: !!havanVisit,
+                    havanData: havanVisit,
+                    systemDate: new Date().toString(),
+                    today Midnight: todayForDebug.toString()
+                });
 
                 // Debug específico para hoje
                 const todayIso = format(new Date(), 'yyyy-MM-dd');
@@ -210,7 +227,38 @@ export default function Home({ user, onLogout }) {
 
     return (
         <div className="home-container">
-            <header className="app-header">
+            {/* DEBUG OVERLAY */}
+            {debugInfo && (
+                <div style={{
+                    background: '#333',
+                    color: '#0f0',
+                    padding: '10px',
+                    fontSize: '10px',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 9999,
+                    borderBottom: '2px solid red',
+                    overflowY: 'auto',
+                    maxHeight: '150px'
+                }}>
+                    <strong>DEBUG MODE v1.0.7</strong><br />
+                    User: {debugInfo.user}<br />
+                    Total Visits Loaded: {debugInfo.totalVisits}<br />
+                    HAVAN Visit (ID 1159) Found in Raw Data? {debugInfo.havanFound ? "YES ✅" : "NO ❌"}<br />
+                    {debugInfo.havanFound && (
+                        <div>
+                            Havan Details: {debugInfo.havanData.data} | {debugInfo.havanData.check_in} - {debugInfo.havanData.check_out} <br />
+                            Consultant on Record: "{debugInfo.havanData.consultor}"
+                        </div>
+                    )}
+                    <hr />
+                    System Date: {debugInfo.systemDate}<br />
+                </div>
+            )}
+
+            <header className="app-header" style={{ marginTop: debugInfo ? '150px' : '0' }}>
                 <img src="/images/logoprotradenovo.png" alt="Logo" className="header-logo" />
                 <div className="header-user">
                     {isAdmin && (
