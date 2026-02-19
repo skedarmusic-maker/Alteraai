@@ -31,35 +31,20 @@ export default function Home({ user, onLogout }) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Fetch stores base from CSV (keep this for now as it's large and static)
                 const storesData = await parseCSV('/BASE AC NOVA.csv');
-
-                // Build Store to Client Map
-                const storeClientMap = {};
-                const getValue = (row, ...candidates) => {
-                    const keys = Object.keys(row);
-                    for (const candidate of candidates) {
-                        const match = keys.find(k => k.trim().toUpperCase() === candidate);
-                        if (match) return row[match];
-                        const partial = keys.find(k => k.trim().toUpperCase().includes(candidate));
-                        if (partial) return row[partial];
-                    }
-                    return '';
-                };
-
-                storesData.forEach(row => {
-                    const store = getValue(row, 'LOJA');
-                    const client = getValue(row, 'CLIENTE');
-                    if (store && client) {
-                        storeClientMap[store.trim().toUpperCase()] = client.trim();
-                    }
-                });
-
-                const VERSION = "1.0.7-DEBUG-UI";
+                const VERSION = "1.0.9-NUCLEAR";
                 console.log(`[${VERSION}] 🔄 Carregando para:`, user);
 
+                // Build Store to Client Map - More robust
+                const storeClientMap = {};
+                storesData.forEach(row => {
+                    const keys = Object.keys(row);
+                    const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
+                    const cK = keys.find(k => k.trim().toUpperCase() === 'CLIENTE');
+                    if (sK && cK && row[sK]) storeClientMap[row[sK].trim().toUpperCase()] = row[cK]?.trim() || '';
+                });
+
                 // NEW: Fetch from Supabase instead of CSV
-                console.log("🔍 Buscando visitas no Supabase...");
                 const userUpper = (user || '').toUpperCase().trim();
                 const { data: supabaseVisits, error: supabaseError } = await supabase
                     .from('visits')
@@ -68,58 +53,48 @@ export default function Home({ user, onLogout }) {
 
                 if (supabaseError) throw supabaseError;
 
-                console.log(`[${VERSION}] ✅ ${supabaseVisits.length} visitas carregadas para ${userUpper}.`);
-
                 // Capture Debug Info
-                const havanVisit = supabaseVisits.find(v => v.id === 1159);
+                const havanVisit = supabaseVisits.find(v => Number(v.id) === 1159);
                 const todayForDebug = new Date();
                 todayForDebug.setHours(0, 0, 0, 0);
 
                 setDebugInfo({
-                    totalVisits: supabaseVisits.length,
+                    v: VERSION,
+                    total: supabaseVisits.length,
                     user: userUpper,
                     havanFound: !!havanVisit,
-                    havanData: havanVisit,
-                    systemDate: new Date().toString(),
-                    "today Midnight": todayForDebug.toString()
+                    havanDetails: havanVisit ? `${havanVisit.data} | ${havanVisit.loja.substring(0, 30)}` : 'NOT FOUND',
+                    today: todayForDebug.toISOString(),
+                    rawIds: supabaseVisits.map(v => v.id).join(', ')
                 });
-
-                // Debug específico para hoje
-                const todayIso = format(new Date(), 'yyyy-MM-dd');
-                const todayVisits = supabaseVisits.filter(v => v.data === todayIso);
-                if (todayVisits.length > 0) {
-                    console.log("📍 Visitas de hoje detectadas:", todayVisits.map(v => `${v.loja} (${v.check_in})`).join(" | "));
-                }
 
                 // Group by Date
                 const grouped = {};
                 supabaseVisits.forEach(visit => {
-                    // Convert yyyy-mm-dd from DB to dd/mm/yyyy for UI compatibility if needed
-                    // but we'll use a standardized date object later
-                    const dateObj = parse(visit.data, 'yyyy-MM-dd', new Date());
-                    const dateStr = format(dateObj, 'dd/MM/yyyy');
-
-                    if (!grouped[dateStr]) grouped[dateStr] = [];
-
-                    grouped[dateStr].push({
-                        date: dateStr,
-                        weekday: visit.dia_da_semana || '',
-                        store: visit.loja,
-                        client: visit.cliente,
-                        checkIn: visit.check_in,
-                        checkOut: visit.check_out,
-                        id: visit.id // Keep DB ID
-                    });
+                    try {
+                        const dateStr = format(parse(visit.data, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy');
+                        if (!grouped[dateStr]) grouped[dateStr] = [];
+                        grouped[dateStr].push({
+                            date: dateStr,
+                            weekday: (visit.dia_da_semana || '').trim(),
+                            store: (visit.loja || '').trim(),
+                            client: (visit.cliente || '').trim(),
+                            checkIn: (visit.check_in || '00:00').trim(),
+                            checkOut: (visit.check_out || '00:00').trim(),
+                            id: visit.id
+                        });
+                    } catch (e) {
+                        console.error("Erro na linha:", visit.id);
+                    }
                 });
 
-                // Inject New Inclusions from LocalStorage (Fallback for offline/temp)
+                // Inject New Inclusions
                 const savedInclusions = JSON.parse(localStorage.getItem('newInclusions') || '[]');
                 savedInclusions.forEach(inc => {
                     if (inc.consultant !== user) return;
                     if (grouped[inc.date]) {
                         const weekday = grouped[inc.date][0]?.weekday || '';
                         let client = storeClientMap[inc.store.trim().toUpperCase()] || '';
-
                         grouped[inc.date].push({
                             date: inc.date,
                             weekday: weekday,
@@ -134,58 +109,48 @@ export default function Home({ user, onLogout }) {
                 });
 
                 // Convert to array and sort
+                const now = new Date();
+                const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const sortedGroups = Object.keys(grouped).map(dateStr => {
                     try {
                         const dateObj = parse(dateStr, 'dd/MM/yyyy', new Date());
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-
-                        if (dateObj < today) return null;
+                        if (dateObj < todayMidnight) return null;
 
                         const visitsWithFlags = grouped[dateStr].map(v => {
                             const visitKey = `${dateStr}-${v.store}`;
-                            const pendingTime = localStorage.getItem(`pendingTimeChange-${visitKey}`);
                             const pendingJP = localStorage.getItem(`pendingJPChange-${visitKey}`);
-
                             let pendingData = null;
                             if (pendingJP) {
                                 try {
                                     pendingData = JSON.parse(pendingJP);
-                                    if (pendingData && pendingData.newStore) {
-                                        const mappedClient = storeClientMap[pendingData.newStore.trim().toUpperCase()];
-                                        if (mappedClient) pendingData.newClient = mappedClient;
+                                    if (pendingData?.newStore) {
+                                        pendingData.newClient = storeClientMap[pendingData.newStore.trim().toUpperCase()] || '';
                                     }
                                 } catch (e) { }
                             }
-
                             return {
                                 ...v,
-                                hasPending: !!(pendingTime || pendingJP),
+                                hasPending: !!(localStorage.getItem(`pendingTimeChange-${visitKey}`) || pendingJP),
                                 pendingChange: pendingData
                             };
                         });
-
                         return {
                             dateStr,
                             dateObj,
-                            visits: visitsWithFlags.sort((a, b) => (a.checkIn || '00:00').localeCompare(b.checkIn || '00:00'))
+                            visits: visitsWithFlags.sort((a, b) => a.checkIn.localeCompare(b.checkIn))
                         };
                     } catch (e) { return null; }
                 }).filter(Boolean).sort((a, b) => compareAsc(a.dateObj, b.dateObj));
 
-                // Extract unique stores for the user
+                // Extract unique stores for user modal
                 const stores = new Set();
-                storesData.forEach(row => {
-                    const consul = getValue(row, 'CONSULTOR');
-                    if (consul && consul.toUpperCase().includes(userUpper)) {
-                        const storeName = getValue(row, 'LOJA');
-                        if (storeName) stores.add(storeName.trim());
-                    }
-                });
-
+                supabaseVisits.forEach(v => { if (v.loja) stores.add(v.loja.trim()); });
                 if (stores.size === 0) {
-                    supabaseVisits.forEach(v => {
-                        if (v.loja) stores.add(v.loja.trim());
+                    storesData.forEach(row => {
+                        const keys = Object.keys(row);
+                        const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
+                        const cK = keys.find(k => k.trim().toUpperCase() === 'CONSULTOR');
+                        if (sK && cK && row[cK]?.toUpperCase().includes(userUpper)) stores.add(row[sK].trim());
                     });
                 }
 
@@ -193,12 +158,12 @@ export default function Home({ user, onLogout }) {
                 setVisitsByDate(sortedGroups);
                 setLoading(false);
             } catch (err) {
-                console.error("Failed to load schedule from Supabase", err);
+                console.error("Failed to load schedule", err);
                 setLoading(false);
             }
         };
         loadData();
-    }, [user, isAddModalOpen]); // Reload when modal closes/saves
+    }, [user, isAddModalOpen]);
 
     // Scroll to today logic
     useEffect(() => {
@@ -243,18 +208,14 @@ export default function Home({ user, onLogout }) {
                     overflowY: 'auto',
                     maxHeight: '150px'
                 }}>
-                    <strong>DEBUG MODE v1.0.7</strong><br />
-                    User: {debugInfo.user}<br />
-                    Total Visits Loaded: {debugInfo.totalVisits}<br />
-                    HAVAN Visit (ID 1159) Found in Raw Data? {debugInfo.havanFound ? "YES ✅" : "NO ❌"}<br />
+                    <strong>DEBUG MODE {debugInfo.v}</strong><br />
+                    User: {debugInfo.user} | Total: {debugInfo.total}<br />
+                    HAVAN (1159) Found? {debugInfo.havanFound ? "YES ✅" : "NO ❌"}<br />
                     {debugInfo.havanFound && (
-                        <div>
-                            Havan Details: {debugInfo.havanData.data} | {debugInfo.havanData.check_in} - {debugInfo.havanData.check_out} <br />
-                            Consultant on Record: "{debugInfo.havanData.consultor}"
-                        </div>
+                        <div>Details: {debugInfo.havanDetails}</div>
                     )}
-                    <hr />
-                    System Date: {debugInfo.systemDate}<br />
+                    Today Ref: {debugInfo.today}<br />
+                    IDs: {debugInfo.rawIds}
                 </div>
             )}
 
