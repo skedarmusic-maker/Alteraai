@@ -214,31 +214,7 @@ export default function Home({ user, onLogout }) {
     return (
         <div className="home-container">
             {/* DEBUG OVERLAY */}
-            {debugInfo && (
-                <div style={{
-                    background: '#111',
-                    color: '#0f0',
-                    padding: '10px',
-                    fontSize: '11px',
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 9999,
-                    borderBottom: '2px solid cyan',
-                    overflowY: 'auto',
-                    maxHeight: '200px',
-                    fontFamily: 'monospace'
-                }}>
-                    <strong>ULTIMATE DEBUG v1.1.0</strong><br />
-                    HAVAN (1159) Found? {debugInfo.havanFound ? "YES ✅" : "NO ❌"}<br />
-                    Groups: {visitsByDate.map(g => `${g.dateStr}(${g.visits.length})`).join(' | ')}<br />
-                    Today IDs in State: {visitsByDate.find(g => g.dateStr.includes('19/02'))?.visits.map(v => v.id).join(', ') || 'NONE'}<br />
-                    Ref Date: {debugInfo.today}
-                </div>
-            )}
-
-            <header className="app-header" style={{ marginTop: debugInfo ? '150px' : '0' }}>
+            <header className="app-header" style={{ marginTop: '0' }}>
                 <img src="/images/logoprotradenovo.png" alt="Logo" className="header-logo" />
                 <div className="header-user">
                     {isAdmin && (
