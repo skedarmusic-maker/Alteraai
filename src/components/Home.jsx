@@ -54,10 +54,10 @@ export default function Home({ user, onLogout }) {
                 });
 
                 // Filter by consultant (loose match)
-                const userUpper = user.toUpperCase();
+                const userUpper = user.toUpperCase().trim();
                 const myVisits = data.filter(row => {
-                    const consul = getValue(row, 'CONSULTOR');
-                    return consul && consul.toUpperCase().includes(userUpper);
+                    const consul = (getValue(row, 'CONSULTOR') || '').toUpperCase().trim();
+                    return consul && consul.includes(userUpper);
                 });
 
                 // Group by Date
@@ -147,7 +147,11 @@ export default function Home({ user, onLogout }) {
                         return {
                             dateStr,
                             dateObj,
-                            visits: visitsWithFlags
+                            visits: visitsWithFlags.sort((a, b) => {
+                                const timeA = a.checkIn || '00:00';
+                                const timeB = b.checkIn || '00:00';
+                                return timeA.localeCompare(timeB);
+                            })
                         };
                     } catch (e) {
                         return null;
