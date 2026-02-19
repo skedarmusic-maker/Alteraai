@@ -3,17 +3,24 @@ const fs = require('fs');
 const Papa = require('papaparse');
 const { parse, format } = require('date-fns');
 
-// Configuração manual para o script de migração
 const supabaseUrl = 'https://vpvdprunhcvaztrqewjp.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwdmRwcnVuaGN2YXp0cnFld2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTI0MDksImV4cCI6MjA4NzA4ODQwOX0.WKx85-6gZtwqZDp2h6g6hul2TorumD5RCIG75RhK0Ws';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const migrate = async () => {
-    console.log('🚀 Iniciando migração para o Supabase...');
+    console.log('🚀 Iniciando migração limpa para o Supabase...');
+
+    // 1. Limpar tabela atual
+    console.log('🧹 Limpando tabela visits...');
+    const { error: deleteError } = await supabase.from('visits').delete().neq('id', 0);
+    if (deleteError) {
+        console.error('❌ Erro ao limpar tabela:', deleteError.message);
+        return;
+    }
 
     if (!fs.existsSync('./public/JP_JANEIRO 2026.csv')) {
-        console.error('❌ Arquivo CSV não encontrado em ./public/JP_JANEIRO 2026.csv');
+        console.error('❌ CSV não encontrado.');
         return;
     }
 
@@ -25,55 +32,55 @@ const migrate = async () => {
         skipEmptyLines: true,
         complete: async (results) => {
             const rows = results.data;
-            console.log(`📊 Total de linhas encontradas no CSV: ${rows.length}`);
+            console.log(`📊 Linhas no CSV: ${rows.length}`);
 
-            const formattedRows = rows.map(row => {
+            const getValue = (row, ...keys) => {
+                for (let k of keys) {
+                    // Tenta achar a chave exata ou com trim
+                    const foundKey = Object.keys(row).find(rk => rk.trim().toUpperCase() === k.toUpperCase());
+                    if (foundKey) return row[foundKey];
+                }
+                return '';
+            };
+
+            const formattedRows = rows.map((row, idx) => {
                 let formattedDate = null;
-                const rawDate = row['DATA'] || row['Data'];
+                const rawDate = getValue(row, 'DATA');
 
                 if (rawDate) {
                     try {
-                        // Tenta converter dd/mm/yyyy para yyyy-mm-dd
                         const parsedDate = parse(rawDate.trim(), 'dd/MM/yyyy', new Date());
                         formattedDate = format(parsedDate, 'yyyy-MM-dd');
-                    } catch (e) {
-                        // se falhar, mantém como está ou ignora
-                    }
+                    } catch (e) { }
                 }
+
+                const consultor = getValue(row, 'CONSULTOR').trim();
+                const loja = getValue(row, 'LOJA').trim();
 
                 return {
                     data: formattedDate,
-                    dia_da_semana: row['DIA DA SEMANA'] || row['DIA'] || '',
-                    consultor: row['CONSULTOR'] || '',
-                    cliente: row['CLIENTE'] || '',
-                    loja: row['LOJA'] || '',
-                    check_in: row['CHECK IN'] || row['ENTRADA'] || '',
-                    check_out: row['CHECK OUT'] || row['SAIDA'] || '',
-                    cnpj: row['CNPJ'] || '',
-                    nome_pdv: row['NOME PDV'] || row['NOME_PDV'] || ''
+                    dia_da_semana: getValue(row, 'DIA DA SEMANA', 'DIA').trim(),
+                    consultor: consultor,
+                    cliente: getValue(row, 'CLIENTE').trim(),
+                    loja: loja,
+                    check_in: getValue(row, 'CHECK IN', 'ENTRADA').trim(),
+                    check_out: getValue(row, 'CHECK OUT', 'SAIDA').trim(),
+                    cnpj: getValue(row, 'CNPJ').trim(),
+                    nome_pdv: getValue(row, 'NOME PDV', 'NOME_PDV').trim()
                 };
-            }).filter(r => r.data && r.consultor);
+            }).filter(r => r.data && r.consultor && r.loja);
 
-            console.log(`🧹 Linhas válidas para envio: ${formattedRows.length}`);
+            console.log(`🧹 Linhas válidas processadas: ${formattedRows.length}`);
 
-            if (formattedRows.length === 0) {
-                console.log('⚠️ Nenhuma linha válida para importar.');
-                return;
-            }
-
-            // Enviar em lotes de 100 para evitar timeout
             const chunkSize = 100;
             for (let i = 0; i < formattedRows.length; i += chunkSize) {
                 const chunk = formattedRows.slice(i, i + chunkSize);
-                console.log(`📤 Enviando lote ${Math.floor(i / chunkSize) + 1}...`);
-
                 const { error } = await supabase.from('visits').insert(chunk);
-                if (error) {
-                    console.error('❌ Erro no lote:', error.message);
-                }
+                if (error) console.error(`❌ Erro lote ${i}:`, error.message);
+                else console.log(`📤 Lote ${Math.floor(i / chunkSize) + 1} enviado...`);
             }
 
-            console.log('✅ Processo de migração concluído!');
+            console.log('✅ Migração finalizada!');
         }
     });
 };

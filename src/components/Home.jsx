@@ -3,7 +3,7 @@ import { parseCSV } from '../utils/csv';
 import DateCard from './DateCard';
 import MassEdit from './MassEdit';
 import VisitDetailModal from './VisitDetailModal';
-import { parse, isSameDay, isToday as checkIsToday, compareAsc } from 'date-fns';
+import { parse, format, isSameDay, isToday as checkIsToday, compareAsc } from 'date-fns';
 import { LogOut, ListChecks } from 'lucide-react';
 import AddVisitModal from './AddVisitModal';
 import './Home.css';
