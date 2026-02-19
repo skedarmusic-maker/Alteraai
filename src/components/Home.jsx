@@ -4,11 +4,11 @@ import DateCard from './DateCard';
 import MassEdit from './MassEdit';
 import VisitDetailModal from './VisitDetailModal';
 import { parse, format, isSameDay, isToday as checkIsToday, compareAsc } from 'date-fns';
-import { LogOut, ListChecks } from 'lucide-react';
+import { LogOut, ListChecks, LayoutDashboard } from 'lucide-react';
 import AddVisitModal from './AddVisitModal';
 import './Home.css';
 import AdminDashboard from './AdminDashboard';
-import { LayoutDashboard } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 export default function Home({ user, onLogout }) {
     const [visitsByDate, setVisitsByDate] = useState([]);
@@ -28,9 +28,6 @@ export default function Home({ user, onLogout }) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Import dynamicamente para evitar problemas de escopo se necessário
-                const { supabase } = await import('../utils/supabase');
-
                 // Fetch stores base from CSV (keep this for now as it's large and static)
                 const storesData = await parseCSV('/BASE AC NOVA.csv');
 
@@ -56,13 +53,16 @@ export default function Home({ user, onLogout }) {
                 });
 
                 // NEW: Fetch from Supabase instead of CSV
-                const userUpper = user.toUpperCase().trim();
+                console.log("🔍 Buscando visitas no Supabase...");
+                const userUpper = (user || '').toUpperCase().trim();
                 const { data: supabaseVisits, error: supabaseError } = await supabase
                     .from('visits')
                     .select('*')
                     .ilike('consultor', `%${userUpper}%`);
 
                 if (supabaseError) throw supabaseError;
+
+                console.log(`✅ Sucesso: ${supabaseVisits.length} visitas carregadas do banco de dados para ${userUpper}.`);
 
                 // Group by Date
                 const grouped = {};
