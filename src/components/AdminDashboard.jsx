@@ -256,8 +256,7 @@ export default function AdminDashboard({ onBack }) {
 
         filtered.forEach(item => {
             const rawName = item.consultant || 'Desconhecido';
-            // Resumir para o primeiro nome
-            const name = rawName.split(' ')[0].toUpperCase();
+            const name = rawName.toUpperCase().trim();
             consultantCount[name] = (consultantCount[name] || 0) + 1;
 
             const type = item.type || 'Outros';
