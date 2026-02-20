@@ -30,9 +30,10 @@ jobs:
           server: ftp.darkturquoise-crab-902348.hostingersite.com
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
           server-dir: /
           local-dir: dist/
           port: 21
           dangerous-clean-slate: true
-          timeout: 120000 # 120 segundos por arquivo
+          timeout: 120000
 
