@@ -28,15 +28,15 @@ jobs:
         run: sudo apt-get install -y lftp
 
       - name: 📂 Deploy via FTPS (lftp)
-        env:
-          FTP_USER: ${{ secrets.FTP_USERNAME }}
-          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
         run: |
-          lftp -e "
-            set ssl:verify-certificate false;
-            set ftp:ssl-allow yes;
-            set ftp:passive-mode yes;
-            open -p 21 -u \"$FTP_USER\",\"$FTP_PASS\" 147.93.14.87;
-            mirror -R --delete --verbose dist/ /;
-            quit;
-          "
+          lftp -u "${{ secrets.FTP_USERNAME }}","${{ secrets.FTP_PASSWORD }}" 147.93.14.87 <<'EOF'
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set ssl:verify-certificate no
+          set net:timeout 20
+          set net:max-retries 5
+          set net:reconnect-interval-base 5
+          set ftp:passive-mode true
+          mirror -R --delete --verbose dist/ public_html/
+          quit
+          EOF
