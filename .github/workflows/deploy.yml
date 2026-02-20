@@ -37,6 +37,6 @@ jobs:
           set net:max-retries 5
           set net:reconnect-interval-base 5
           set ftp:passive-mode true
-          mirror -R --delete --verbose dist/ public_html/
+          mirror -R --delete --verbose dist/ ./
           quit
           EOF
