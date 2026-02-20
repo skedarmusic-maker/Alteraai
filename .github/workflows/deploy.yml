@@ -24,16 +24,18 @@ jobs:
       - name: 🏗️ Build Project
         run: npm run build
 
-      - name: 📂 Sync files (FTP)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftp.darkturquoise-crab-902348.hostingersite.com
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          server-dir: /
-          local-dir: dist/
-          port: 21
-          dangerous-clean-slate: true
-          timeout: 120000
+      - name: � Install lftp
+        run: sudo apt-get install -y lftp
 
+      - name: 📂 Deploy via FTPS (lftp)
+        run: |
+          lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" \
+            -e "
+              set ftp:ssl-allow true;
+              set ftp:ssl-protect-data true;
+              set ssl:verify-certificate false;
+              set ftp:passive-mode true;
+              mirror -R --delete --verbose dist/ /;
+              quit
+            " \
+            ftp.darkturquoise-crab-902348.hostingersite.com
