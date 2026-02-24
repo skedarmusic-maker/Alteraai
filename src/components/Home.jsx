@@ -163,17 +163,23 @@ export default function Home({ user, onLogout }) {
                     } catch (e) { return null; }
                 }).filter(Boolean).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-                // Extract unique stores for user modal
+                // Extract unique stores for user modal - ALWAYS from CSV base for the consultant
                 const stores = new Set();
-                supabaseVisits.forEach(v => { if (v.loja) stores.add(v.loja.trim()); });
-                if (stores.size === 0) {
-                    storesData.forEach(row => {
-                        const keys = Object.keys(row);
-                        const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
-                        const cK = keys.find(k => k.trim().toUpperCase() === 'CONSULTOR');
-                        if (sK && cK && row[cK]?.toUpperCase().includes(userUpper)) stores.add(row[sK].trim());
-                    });
-                }
+
+                // 1. Add stores from the CSV base
+                storesData.forEach(row => {
+                    const keys = Object.keys(row);
+                    const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
+                    const cK = keys.find(k => k.trim().toUpperCase() === 'CONSULTOR');
+                    if (sK && cK && row[cK]?.toUpperCase().includes(userUpper)) {
+                        stores.add(row[sK].trim());
+                    }
+                });
+
+                // 2. Fallback/Add stores from scheduled visits (case something is not in CSV but in DB)
+                supabaseVisits.forEach(v => {
+                    if (v.loja) stores.add(v.loja.trim());
+                });
 
                 setAvailableStores(Array.from(stores).sort());
                 setVisitsByDate(sortedGroups);
