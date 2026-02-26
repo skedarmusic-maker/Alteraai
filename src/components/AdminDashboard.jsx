@@ -310,45 +310,25 @@ export default function AdminDashboard({ onBack }) {
 
     }, [rawLogs, filterType, dateRange, selectedConsultant, selectedType, selectedClient, loading, storeToClientMap]);
 
-    const handlePieClick = (data) => {
-        if (data && data.name) {
-            setSelectedType(prev => prev === data.name ? null : data.name);
-        }
-    };
-
-    const handleBarClick = (data) => {
-        // Handle Recharts Chart Click
+    const handleChartClick = (data, setter) => {
+        if (!data) return;
         let clickedName = null;
-        if (data && data.activeLabel) {
+        if (data.activeLabel) {
             clickedName = data.activeLabel;
-        } else if (data && data.activePayload && data.activePayload.length > 0) {
+        } else if (data.activePayload && data.activePayload.length > 0) {
             clickedName = data.activePayload[0].payload.name;
-        } else if (data && data.name) {
-            // If attached directly to Bar/Cell
+        } else if (data.name) {
             clickedName = data.name;
         }
 
         if (clickedName) {
-            setSelectedConsultant(prev => prev === clickedName ? null : clickedName);
+            setter(prev => prev === clickedName ? null : String(clickedName));
         }
     };
 
-    const handleClientClick = (data) => {
-        // Handle Recharts Chart Click
-        let clickedName = null;
-        if (data && data.activeLabel) {
-            clickedName = data.activeLabel;
-        } else if (data && data.activePayload && data.activePayload.length > 0) {
-            clickedName = data.activePayload[0].payload.name;
-        } else if (data && data.name) {
-            // If attached directly to Bar/Cell
-            clickedName = data.name;
-        }
-
-        if (clickedName) {
-            setSelectedClient(prev => prev === clickedName ? null : clickedName);
-        }
-    };
+    const handlePieClick = (data) => handleChartClick(data, setSelectedType);
+    const handleBarClick = (data) => handleChartClick(data, setSelectedConsultant);
+    const handleClientClick = (data) => handleChartClick(data, setSelectedClient);
 
     const handleStatusUpdate = async (rowIndex, currentStatus) => {
         if (!isMaster) return;
@@ -506,7 +486,10 @@ export default function AdminDashboard({ onBack }) {
                                         fill="#FFF"
                                         fontSize={12}
                                         fontWeight={700}
-                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(0)}%)`}
+                                        formatter={(val) => {
+                                            if (!stats.total || isNaN(val)) return `${val || 0} (0%)`;
+                                            return `${val} (${((val / stats.total) * 100).toFixed(0)}%)`;
+                                        }}
                                     />
                                 </Bar>
                             </BarChart>
@@ -553,7 +536,10 @@ export default function AdminDashboard({ onBack }) {
                                         fontSize={12}
                                         offset={10}
                                         fontWeight={700}
-                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`}
+                                        formatter={(val) => {
+                                            if (!stats.total || isNaN(val)) return `${val || 0} (0%)`;
+                                            return `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`;
+                                        }}
                                     />
                                 </Bar>
                             </BarChart>
@@ -600,7 +586,10 @@ export default function AdminDashboard({ onBack }) {
                                         fontSize={12}
                                         offset={10}
                                         fontWeight={700}
-                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`}
+                                        formatter={(val) => {
+                                            if (!stats.total || isNaN(val)) return `${val || 0} (0%)`;
+                                            return `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`;
+                                        }}
                                     />
                                 </Bar>
                             </BarChart>
