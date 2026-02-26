@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart as RePieChart, Pie, Legend, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -473,33 +473,43 @@ export default function AdminDashboard({ onBack }) {
                     <h3>Solicitações por Tipo (Clique para filtrar)</h3>
                     <div className="chart-wrapper">
                         <ResponsiveContainer width="100%" height={250}>
-                            <RePieChart>
-                                <Pie
-                                    data={stats.byType}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    onClick={handlePieClick}
-                                    stroke="none"
-                                >
+                            <BarChart
+                                data={stats.byType}
+                                layout="horizontal"
+                                margin={{ left: 10, right: 10, top: 30, bottom: 20 }}
+                                onClick={handlePieClick}
+                            >
+                                <XAxis
+                                    dataKey="name"
+                                    stroke="#FFF"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    interval={0}
+                                />
+                                <YAxis hide domain={[0, 'auto']} />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                    contentStyle={{ backgroundColor: '#1A1A1A', border: 'none', borderRadius: '8px' }}
+                                />
+                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
                                     {stats.byType.map((entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={COLORS[index % COLORS.length]}
                                             fillOpacity={!selectedType || selectedType === entry.name ? 1 : 0.3}
-                                            style={{ cursor: 'pointer', outline: 'none' }}
                                         />
                                     ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#1A1A1A', border: 'none', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#fff' }}
-                                />
-                                <Legend />
-                            </RePieChart>
+                                    <LabelList
+                                        dataKey="value"
+                                        position="top"
+                                        fill="#FFF"
+                                        fontSize={12}
+                                        fontWeight={700}
+                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(0)}%)`}
+                                    />
+                                </Bar>
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -511,7 +521,7 @@ export default function AdminDashboard({ onBack }) {
                             <BarChart
                                 data={stats.byConsultant}
                                 layout="vertical"
-                                margin={{ left: 40, right: 40 }}
+                                margin={{ left: 10, right: 130, top: 10, bottom: 10 }}
                                 onClick={handleBarClick}
                             >
                                 <XAxis type="number" hide />
@@ -536,7 +546,15 @@ export default function AdminDashboard({ onBack }) {
                                             fill={selectedConsultant === entry.name ? '#FF006C' : '#6A0AAA'}
                                         />
                                     ))}
-                                    <LabelList dataKey="value" position="right" fill="#FFF" fontSize={12} offset={10} fontWeight={700} />
+                                    <LabelList
+                                        dataKey="value"
+                                        position="right"
+                                        fill="#FFF"
+                                        fontSize={12}
+                                        offset={10}
+                                        fontWeight={700}
+                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`}
+                                    />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
@@ -553,7 +571,7 @@ export default function AdminDashboard({ onBack }) {
                             <BarChart
                                 data={stats.byClient}
                                 layout="vertical"
-                                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                margin={{ top: 10, right: 130, left: 10, bottom: 10 }}
                                 onClick={handleClientClick}
                             >
                                 <XAxis type="number" hide />
@@ -575,7 +593,15 @@ export default function AdminDashboard({ onBack }) {
                                             fill={selectedClient === entry.name ? '#FF006C' : '#FD5003'}
                                         />
                                     ))}
-                                    <LabelList dataKey="value" position="right" fill="#FFF" fontSize={12} offset={10} fontWeight={700} />
+                                    <LabelList
+                                        dataKey="value"
+                                        position="right"
+                                        fill="#FFF"
+                                        fontSize={12}
+                                        offset={10}
+                                        fontWeight={700}
+                                        formatter={(val) => `${val} (${((val / stats.total) * 100).toFixed(1).replace(/\\.0$/, '')}%)`}
+                                    />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
