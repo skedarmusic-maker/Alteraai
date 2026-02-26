@@ -160,9 +160,11 @@ export default function AdminDashboard({ onBack }) {
 
         // 2. Consultant Filter
         if (selectedConsultant) {
-            filtered = filtered.filter(log =>
-                (log.consultant || '').toUpperCase() === selectedConsultant.toUpperCase()
-            );
+            filtered = filtered.filter(log => {
+                const rawName = log.consultant || 'Desconhecido';
+                const firstName = rawName.split(' ')[0].toUpperCase();
+                return firstName === selectedConsultant.toUpperCase();
+            });
         }
 
         // 3. Type Filter
