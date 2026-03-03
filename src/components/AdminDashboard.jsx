@@ -301,13 +301,30 @@ export default function AdminDashboard({ onBack }) {
             value: clientCount[k]
         })).sort((a, b) => b.value - a.value).slice(0, 10); // Aumentar para 10
 
+        // Macro Stats Calculation
+        let totalLojas = 0;
+        let totalHorarios = 0;
+        let totalInclusoes = 0;
+
+        filtered.forEach(item => {
+            const t = (item.type || '').toUpperCase();
+            if (t.includes('JP') || t === 'LOJA') totalLojas++;
+            else if (t.includes('HORÁRIO') || t.includes('HORARIO')) totalHorarios++;
+            else if (t.includes('INCLUSÃO') || t.includes('INCLUSAO')) totalInclusoes++;
+        });
+
         setStats({
             total: filtered.length,
             byType,
             byConsultant: byConsultantAll.slice(0, 10), // Top 10 para o gráfico
             totalConsultants: byConsultantAll.length, // Total real para o KPI
             byClient,
-            filteredLogs: filtered
+            filteredLogs: filtered,
+            macro: {
+                lojas: totalLojas,
+                horarios: totalHorarios,
+                inclusoes: totalInclusoes
+            }
         });
 
     }, [rawLogs, filterType, dateRange, selectedConsultant, selectedType, selectedClient, loading, storeToClientMap]);
@@ -451,51 +468,70 @@ export default function AdminDashboard({ onBack }) {
 
             {/* Charts Area */}
             <div className="charts-grid">
-                <div className="chart-card clickable-chart">
-                    <h3>Solicitações por Tipo (Clique para filtrar)</h3>
-                    <div className="chart-wrapper">
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart
-                                data={stats.byType}
-                                layout="horizontal"
-                                margin={{ left: 10, right: 10, top: 30, bottom: 20 }}
-                                onClick={handlePieClick}
-                            >
-                                <XAxis
-                                    dataKey="name"
-                                    stroke="#FFF"
-                                    fontSize={10}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    interval={0}
-                                />
-                                <YAxis hide domain={[0, 'auto']} />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                    contentStyle={{ backgroundColor: '#1A1A1A', border: 'none', borderRadius: '8px' }}
-                                />
-                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                                    {stats.byType.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={COLORS[index % COLORS.length]}
-                                            fillOpacity={!selectedType || selectedType === entry.name ? 1 : 0.3}
-                                        />
-                                    ))}
-                                    <LabelList
-                                        dataKey="value"
-                                        position="top"
-                                        fill="#FFF"
-                                        fontSize={12}
-                                        fontWeight={700}
-                                        formatter={(val) => {
-                                            if (!stats.total || isNaN(val)) return `${val || 0} (0%)`;
-                                            return `${val} (${((val / stats.total) * 100).toFixed(0)}%)`;
-                                        }}
+                <div className="chart-card clickable-chart type-chart-container">
+                    <h3>Solicitações por Tipo (Clique no gráfico para filtrar)</h3>
+                    <div className="type-chart-layout">
+                        {/* Panel for Macro KPIs */}
+                        <div className="macro-panel">
+                            <div className="macro-card">
+                                <h6>Total Loja <small>(JP + Massa)</small></h6>
+                                <span>{stats.macro?.lojas || 0}</span>
+                            </div>
+                            <div className="macro-card">
+                                <h6>Total Horário <small>(Troca + Massa)</small></h6>
+                                <span>{stats.macro?.horarios || 0}</span>
+                            </div>
+                            <div className="macro-card">
+                                <h6>Novas Inclusões</h6>
+                                <span>{stats.macro?.inclusoes || 0}</span>
+                            </div>
+                        </div>
+
+                        {/* Detailed Chart */}
+                        <div className="chart-wrapper">
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart
+                                    data={stats.byType}
+                                    layout="horizontal"
+                                    margin={{ left: 10, right: 10, top: 30, bottom: 20 }}
+                                    onClick={handlePieClick}
+                                >
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#FFF"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        interval={0}
                                     />
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                                    <YAxis hide domain={[0, 'auto']} />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                        contentStyle={{ backgroundColor: '#1A1A1A', border: 'none', borderRadius: '8px' }}
+                                    />
+                                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                                        {stats.byType.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={COLORS[index % COLORS.length]}
+                                                fillOpacity={!selectedType || selectedType === entry.name ? 1 : 0.3}
+                                            />
+                                        ))}
+                                        <LabelList
+                                            dataKey="value"
+                                            position="top"
+                                            fill="#FFF"
+                                            fontSize={12}
+                                            fontWeight={700}
+                                            formatter={(val) => {
+                                                if (!stats.total || isNaN(val)) return `${val || 0} (0%)`;
+                                                return `${val} (${((val / stats.total) * 100).toFixed(0)}%)`;
+                                            }}
+                                        />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
 
@@ -654,7 +690,7 @@ export default function AdminDashboard({ onBack }) {
                                                 : (log.newDate || '-')}
                                         </td>
                                         <td>{log.newTime || '-'}</td>
-                                        <td className="reason-cell">{log.reason}</td>
+                                        <td className="reason-cell" data-reason={log.reason} title={log.reason}>{log.reason}</td>
                                         <td>
                                             <span className={`status-badge ${log.status === 'Feito' ? 'status-done' : 'status-pending'}`}>
                                                 {log.status || 'Pendente'}

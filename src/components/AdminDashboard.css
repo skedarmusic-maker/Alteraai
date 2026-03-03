@@ -170,6 +170,71 @@
     position: relative;
 }
 
+/* Macro vs Detailed Layout */
+.type-chart-layout {
+    display: flex;
+    gap: var(--spacing-xl);
+    align-items: center;
+}
+
+.macro-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-width: 160px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: var(--spacing-lg);
+}
+
+.macro-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.macro-card h6 {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.macro-card h6 small {
+    display: block;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: none;
+    margin-top: 2px;
+}
+
+.macro-card span {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-white);
+    font-family: var(--font-heading);
+}
+
+/* Responsiveness for new layout */
+@media (max-width: 768px) {
+    .type-chart-layout {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .macro-panel {
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-right: 0;
+        padding-bottom: var(--spacing-md);
+        justify-content: space-between;
+    }
+
+    .macro-card span {
+        font-size: 1.4rem;
+    }
+}
+
 /* Table */
 .logs-table-container {
     background: #1A1A1A;
@@ -244,12 +309,43 @@
 }
 
 .reason-cell {
-    max-width: 200px;
+    max-width: 180px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-style: italic;
     color: rgba(255, 255, 255, 0.5) !important;
+    position: relative;
+    cursor: help;
+}
+
+.reason-cell::after {
+    content: attr(data-reason);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1A1A1A;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: normal;
+    width: 250px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+    font-size: 0.8rem;
+    font-style: normal;
+    pointer-events: none;
+}
+
+.reason-cell:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: 125%;
 }
 
 .status-badge {
@@ -315,6 +411,7 @@
     width: auto;
     object-fit: contain;
 }
+
 /* Pending Alert Banner */
 .pending-alert-banner {
     background: linear-gradient(135deg, #FF006C, #c40052);
@@ -401,4 +498,3 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.9rem;
 }
-
