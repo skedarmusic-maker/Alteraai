@@ -31,21 +31,27 @@ export default function Home({ user, onLogout }) {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const storesData = await parseCSV('/BASE AC NOVA.csv');
-                const VERSION = "1.0.9-NUCLEAR";
+                const VERSION = "1.1.0-ONLINE-BASE";
                 console.log(`[${VERSION}] 🔄 Carregando para:`, user);
+                const userUpper = (user || '').toUpperCase().trim();
+
+                // Fetch Store Base from Supabase Online
+                const { data: supabaseLocais, error: locaisError } = await supabase
+                    .from('locais')
+                    .select('*');
+
+                if (locaisError) throw locaisError;
 
                 // Build Store to Client Map - More robust
                 const storeClientMap = {};
-                storesData.forEach(row => {
-                    const keys = Object.keys(row);
-                    const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
-                    const cK = keys.find(k => k.trim().toUpperCase() === 'CLIENTE');
-                    if (sK && cK && row[sK]) storeClientMap[row[sK].trim().toUpperCase()] = row[cK]?.trim() || '';
+                supabaseLocais.forEach(row => {
+                    if (row.loja) {
+                        storeClientMap[row.loja.trim().toUpperCase()] = row.cliente?.trim() || '';
+                    }
                 });
 
                 // NEW: Fetch from Supabase instead of CSV
-                const userUpper = (user || '').toUpperCase().trim();
+                // Fetch Visits from Supabase
                 const { data: supabaseVisits, error: supabaseError } = await supabase
                     .from('visits')
                     .select('*')
@@ -166,13 +172,10 @@ export default function Home({ user, onLogout }) {
                 // Extract unique stores for user modal - ALWAYS from CSV base for the consultant
                 const stores = new Set();
 
-                // 1. Add stores from the CSV base
-                storesData.forEach(row => {
-                    const keys = Object.keys(row);
-                    const sK = keys.find(k => k.trim().toUpperCase() === 'LOJA');
-                    const cK = keys.find(k => k.trim().toUpperCase() === 'CONSULTOR');
-                    if (sK && cK && row[cK]?.toUpperCase().includes(userUpper)) {
-                        stores.add(row[sK].trim());
+                // 1. Add stores from the online base
+                supabaseLocais.forEach(row => {
+                    if (row.loja && row.consultor?.toUpperCase().includes(userUpper)) {
+                        stores.add(row.loja.trim());
                     }
                 });
 

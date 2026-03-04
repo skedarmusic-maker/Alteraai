@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { generateSummary } from '../utils/gemini';
 import './AdminDashboard.css';
 
 export default function AdminDashboard({ onBack }) {
@@ -30,8 +31,15 @@ export default function AdminDashboard({ onBack }) {
         byType: [],
         byConsultant: [],
         byClient: [],
+        byConsultantDetailed: [],
         filteredLogs: []
     });
+
+    // AI Summary State
+    const [isAiLoading, setIsAiLoading] = useState(false);
+    const [aiSummary, setAiSummary] = useState(null);
+    const [individualSummaries, setIndividualSummaries] = useState({});
+    const [loadingSummaries, setLoadingSummaries] = useState({});
 
     // Pagination & View State
     const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -252,6 +260,7 @@ export default function AdminDashboard({ onBack }) {
 
         // 5. Calculate Stats
         const consultantCount = {};
+        const consultantDetails = {};
         const typeCount = {};
         const clientCount = {};
         const unmatchedLog = new Set();
@@ -259,6 +268,22 @@ export default function AdminDashboard({ onBack }) {
         filtered.forEach(item => {
             const rawName = item.consultant || 'Desconhecido';
             const name = rawName.split(' ')[0].toUpperCase();
+
+            // Build detailed consultant info for AI Summary
+            if (!consultantDetails[name]) {
+                consultantDetails[name] = { lojas: 0, horarios: 0, inclusoes: 0, total: 0, reasons: [] };
+            }
+            consultantDetails[name].total++;
+            if (item.reason && item.reason.trim()) {
+                consultantDetails[name].reasons.push(item.reason);
+            }
+
+            const t = (item.type || '').toUpperCase();
+            if (t.includes('JP') || t === 'LOJA') consultantDetails[name].lojas++;
+            else if (t.includes('HORÁRIO') || t.includes('HORARIO')) consultantDetails[name].horarios++;
+            else if (t.includes('INCLUSÃO') || t.includes('INCLUSAO')) consultantDetails[name].inclusoes++;
+
+            // Basic Stats
             consultantCount[name] = (consultantCount[name] || 0) + 1;
 
             const type = item.type || 'Outros';
@@ -296,6 +321,11 @@ export default function AdminDashboard({ onBack }) {
             value: typeCount[k]
         }));
 
+        const byConsultantDetailedArr = Object.keys(consultantDetails).map(k => ({
+            name: k,
+            ...consultantDetails[k]
+        })).sort((a, b) => b.total - a.total);
+
         const byClient = Object.keys(clientCount).map(k => ({
             name: k,
             value: clientCount[k]
@@ -317,6 +347,7 @@ export default function AdminDashboard({ onBack }) {
             total: filtered.length,
             byType,
             byConsultant: byConsultantAll.slice(0, 10), // Top 10 para o gráfico
+            byConsultantDetailed: byConsultantDetailedArr,
             totalConsultants: byConsultantAll.length, // Total real para o KPI
             byClient,
             filteredLogs: filtered,
@@ -348,6 +379,40 @@ export default function AdminDashboard({ onBack }) {
     const handlePieClick = (data) => handleChartClick(data, setSelectedType);
     const handleBarClick = (data) => handleChartClick(data, setSelectedConsultant);
     const handleClientClick = (data) => handleChartClick(data, setSelectedClient);
+
+    const handleGenerateAI = async () => {
+        setIsAiLoading(true);
+        setAiSummary(null);
+
+        // Build context for the AI
+        let promptContext = "Aqui estão os motivos de alterações de rota/roteiro solicitadas pelos consultores no período selecionado:\n\n";
+        stats.byConsultantDetailed.forEach(cons => {
+            if (cons.reasons && cons.reasons.length > 0) {
+                promptContext += `Consultor: ${cons.name}\n`;
+                promptContext += `Total de Lojas (JP/Massa): ${cons.lojas}\n`;
+                promptContext += `Total de Horários: ${cons.horarios}\n`;
+                promptContext += `Motivos informados:\n- ${cons.reasons.join('\n- ')}\n\n`;
+            }
+        });
+
+        const prompt = `${promptContext}Por favor, como um gerente analítico, faça um resumo de 2 a 3 parágrafos identificando padrões de mudança (ex: muita viagem de deslocamento, muitas lojas inseridas no mesmo consultor por causa de cliente), e deponha sobre os motivos que mais causaram as alterações, citando nomes de consultores ou clientes se for muito repetitivo. Tente ser direto e trazer insights gerenciais para me ajudar a entender as anomalias desse roteiro atual. Seja profissional.`;
+
+        const result = await generateSummary(prompt);
+        setAiSummary(result);
+        setIsAiLoading(false);
+    };
+
+    const handleGenerateIndividualAI = async (cons) => {
+        setLoadingSummaries(prev => ({ ...prev, [cons.name]: true }));
+
+        const promptContext = `Consultor: ${cons.name}\nTotal de Lojas: ${cons.lojas}\nTotal de Horários: ${cons.horarios}\nMotivos informados:\n- ${cons.reasons.join('\n- ')}\n\n`;
+        const prompt = `${promptContext}Faça um resumo analítico simples e direto em um curto parágrafo sobre as solicitações acima. Destaque padrões ou anomalias repetitivas da rota se houver. Seja profissional, conciso e use português BR.`;
+
+        const result = await generateSummary(prompt);
+
+        setIndividualSummaries(prev => ({ ...prev, [cons.name]: result }));
+        setLoadingSummaries(prev => ({ ...prev, [cons.name]: false }));
+    };
 
     const handleStatusUpdate = async (rowIndex, currentStatus) => {
         if (!isMaster) return;
@@ -633,6 +698,73 @@ export default function AdminDashboard({ onBack }) {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+            </div>
+
+            {/* Consultant Summary & AI Analysis Area */}
+            <div className="consultants-summary-area">
+                <div className="summary-section-header">
+                    <h3>Resumo por Consultor</h3>
+                    <button
+                        className="ai-action-btn"
+                        onClick={handleGenerateAI}
+                        disabled={isAiLoading || stats.byConsultantDetailed.length === 0}
+                    >
+                        {isAiLoading ? 'Analisando dados...' : '✨ Gerar Parecer com IA'}
+                    </button>
+                </div>
+
+                {aiSummary && (
+                    <div className="ai-response-box">
+                        <div className="ai-header">
+                            <span className="ai-icon">✨</span>
+                            <strong>Análise Gerencial (AI)</strong>
+                        </div>
+                        <div className="ai-content">
+                            {aiSummary}
+                        </div>
+                    </div>
+                )}
+
+                <div className="consultant-cards-grid">
+                    {stats.byConsultantDetailed.map((cons, idx) => (
+                        <div key={idx} className="consultant-metric-card">
+                            <div className="cons-name">{cons.name}</div>
+                            <div className="cons-metrics">
+                                <div className="metric-col">
+                                    <span className="m-label">Lojas</span>
+                                    <span className="m-val" style={{ color: '#FF006C' }}>{cons.lojas}</span>
+                                </div>
+                                <div className="metric-col">
+                                    <span className="m-label">Horários</span>
+                                    <span className="m-val" style={{ color: '#6A0AAA' }}>{cons.horarios}</span>
+                                </div>
+                                <div className="metric-col">
+                                    <span className="m-label">Incl.</span>
+                                    <span className="m-val" style={{ color: '#FD5003' }}>{cons.inclusoes}</span>
+                                </div>
+                                <div className="metric-col" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '10px', marginLeft: '4px' }}>
+                                    <span className="m-label" style={{ color: '#FFF' }}>Total</span>
+                                    <span className="m-val" style={{ color: '#00E676' }}>{cons.total}</span>
+                                </div>
+                            </div>
+
+                            <div className="cons-ai-section">
+                                {!individualSummaries[cons.name] && !loadingSummaries[cons.name] ? (
+                                    <button className="small-ai-btn" onClick={() => handleGenerateIndividualAI(cons)}>
+                                        ✨ Analisar Consultor
+                                    </button>
+                                ) : loadingSummaries[cons.name] ? (
+                                    <div className="small-ai-loading">Analisando...</div>
+                                ) : (
+                                    <div className="small-ai-result">
+                                        <div className="small-ai-tag">AI</div>
+                                        {individualSummaries[cons.name]}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
