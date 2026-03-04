@@ -920,128 +920,125 @@ export default function AdminDashboard({ onBack }) {
             </div>
 
             {/* Detailed Table */}
-            {!isSuperMaster && (
-                <div className="logs-table-container">
-                    <div className="table-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3>Detalhamento {selectedConsultant ? `- ${selectedConsultant}` : ''} {selectedClient ? `- ${selectedClient}` : ''} </h3>
-                        <div className="table-actions">
-                            <label style={{ marginRight: '8px', fontSize: '0.9rem', color: '#888' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={showPendingOnly}
-                                    onChange={(e) => { setShowPendingOnly(e.target.checked); setCurrentPage(1); }}
-                                    style={{ marginRight: '6px' }}
-                                />
-                                Apenas Pendentes
-                            </label>
-                        </div>
+            <div className="logs-table-container">
+                <div className="table-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3>Detalhamento de solicitações {selectedConsultant ? `- ${selectedConsultant}` : ''} {selectedClient ? `- ${selectedClient}` : ''} </h3>
+                    <div className="table-actions">
+                        <label style={{ marginRight: '8px', fontSize: '0.9rem', color: '#888' }}>
+                            <input
+                                type="checkbox"
+                                checked={showPendingOnly}
+                                onChange={(e) => { setShowPendingOnly(e.target.checked); setCurrentPage(1); }}
+                                style={{ marginRight: '6px' }}
+                            />
+                            Apenas Pendentes
+                        </label>
                     </div>
-
-                    <div className="table-responsive">
-                        <table className="logs-table">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Consultor</th>
-                                    <th>Tipo</th>
-                                    <th>Loja Original</th>
-                                    <th>Horário Orig.</th>
-                                    <th>Nova Loja</th>
-                                    <th>Nova Data</th>
-                                    <th>Novo Horário</th>
-                                    <th>Motivo</th>
-                                    <th>Status</th>
-                                    {isMaster && <th>Ação</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedLogs.map((log, idx) => (
-                                    <tr key={idx} className={log.status === 'Feito' ? 'row-done' : ''}>
-                                        <td>{new Date(log.date || Date.now()).toLocaleDateString()}</td>
-                                        <td className="highlight-text">{(log.consultant || '').split(' ')[0]}</td>
-                                        <td>
-                                            <span className={`badge badge-${(log.type || '').split(' ')[0].toLowerCase()}`}>
-                                                {log.type}
-                                            </span>
-                                        </td>
-                                        <td>{log.storeFrom || '-'}</td>
-                                        <td>{log.originalTime || '-'}</td>
-                                        <td>{log.storeTo || '-'}</td>
-                                        <td>
-                                            {log.newDate && String(log.newDate).includes('T')
-                                                ? new Date(log.newDate).toLocaleDateString()
-                                                : (log.newDate || '-')}
-                                        </td>
-                                        <td>{log.newTime || '-'}</td>
-                                        <td className="reason-cell" data-reason={log.reason} title={log.reason}>{log.reason}</td>
-                                        <td>
-                                            <span className={`status-badge ${log.status === 'Feito' ? 'status-done' : 'status-pending'}`}>
-                                                {log.status || 'Pendente'}
-                                            </span>
-                                        </td>
-                                        {isMaster && (
-                                            <td>
-                                                {log.status !== 'Feito' && (
-                                                    <button
-                                                        className="action-btn-approve"
-                                                        onClick={() => handleStatusUpdate(log.id, log.status)}
-                                                        title="Marcar como Feito"
-                                                    >
-                                                        <Check size={16} />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                                {paginatedLogs.length === 0 && (
-                                    <tr>
-                                        <td colSpan="11" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                                            Nenhum registro encontrado para este filtro.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* DEBUG SECTION */}
-                    <div style={{ marginTop: '40px', padding: '20px', border: '1px solid red', backgroundColor: '#fff0f0', borderRadius: '8px' }}>
-                        <h3 style={{ color: '#d32f2f' }}>🔧 Debug Info (N/A Issue)</h3>
-                        <p><strong>Total Stores in Map:</strong> {mapDebugSize}</p>
-                        <p><strong>Unmatched Stores in Current Filter (Top 50):</strong> (These stores appear in logs but not in BASE CSV)</p>
-                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                            <ol>
-                                {unmatchedStores.map((s, i) => (
-                                    <li key={i}>{s}</li>
-                                ))}
-                            </ol>
-                        </div>
-                        {unmatchedStores.length === 0 && <p style={{ color: 'green' }}>All stores matched!</p>}
-                    </div>
-
-
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                        <div className="pagination-controls">
-                            <button
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            >
-                                Anterior
-                            </button>
-                            <span>Página {currentPage} de {totalPages}</span>
-                            <button
-                                disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            >
-                                Próxima
-                            </button>
-                        </div>
-                    )}
                 </div>
-            )
-            }
+
+                <div className="table-responsive">
+                    <table className="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Consultor</th>
+                                <th>Tipo</th>
+                                <th>Loja Original</th>
+                                <th>Horário Orig.</th>
+                                <th>Nova Loja</th>
+                                <th>Nova Data</th>
+                                <th>Novo Horário</th>
+                                <th>Motivo</th>
+                                <th>Status</th>
+                                {isMaster && <th>Ação</th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedLogs.map((log, idx) => (
+                                <tr key={idx} className={log.status === 'Feito' ? 'row-done' : ''}>
+                                    <td>{new Date(log.date || Date.now()).toLocaleDateString()}</td>
+                                    <td className="highlight-text">{(log.consultant || '').split(' ')[0]}</td>
+                                    <td>
+                                        <span className={`badge badge-${(log.type || '').split(' ')[0].toLowerCase()}`}>
+                                            {log.type}
+                                        </span>
+                                    </td>
+                                    <td>{log.storeFrom || '-'}</td>
+                                    <td>{log.originalTime || '-'}</td>
+                                    <td>{log.storeTo || '-'}</td>
+                                    <td>
+                                        {log.newDate && String(log.newDate).includes('T')
+                                            ? new Date(log.newDate).toLocaleDateString()
+                                            : (log.newDate || '-')}
+                                    </td>
+                                    <td>{log.newTime || '-'}</td>
+                                    <td className="reason-cell" data-reason={log.reason} title={log.reason}>{log.reason}</td>
+                                    <td>
+                                        <span className={`status-badge ${log.status === 'Feito' ? 'status-done' : 'status-pending'}`}>
+                                            {log.status || 'Pendente'}
+                                        </span>
+                                    </td>
+                                    {isMaster && (
+                                        <td>
+                                            {log.status !== 'Feito' && (
+                                                <button
+                                                    className="action-btn-approve"
+                                                    onClick={() => handleStatusUpdate(log.id, log.status)}
+                                                    title="Marcar como Feito"
+                                                >
+                                                    <Check size={16} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                            {paginatedLogs.length === 0 && (
+                                <tr>
+                                    <td colSpan="11" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                                        Nenhum registro encontrado para este filtro.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* DEBUG SECTION */}
+                <div style={{ marginTop: '40px', padding: '20px', border: '1px solid red', backgroundColor: '#fff0f0', borderRadius: '8px' }}>
+                    <h3 style={{ color: '#d32f2f' }}>🔧 Debug Info (N/A Issue)</h3>
+                    <p><strong>Total Stores in Map:</strong> {mapDebugSize}</p>
+                    <p><strong>Unmatched Stores in Current Filter (Top 50):</strong> (These stores appear in logs but not in BASE CSV)</p>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                        <ol>
+                            {unmatchedStores.map((s, i) => (
+                                <li key={i}>{s}</li>
+                            ))}
+                        </ol>
+                    </div>
+                    {unmatchedStores.length === 0 && <p style={{ color: 'green' }}>All stores matched!</p>}
+                </div>
+
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="pagination-controls">
+                        <button
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        >
+                            Anterior
+                        </button>
+                        <span>Página {currentPage} de {totalPages}</span>
+                        <button
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        >
+                            Próxima
+                        </button>
+                    </div>
+                )}
+            </div>
         </div >
     );
 }
