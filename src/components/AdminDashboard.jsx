@@ -72,29 +72,34 @@ export default function AdminDashboard({ onBack }) {
         const loadData = async () => {
             let data = await fetchLogs();
 
-            // Helper to safely find property (case insensitive)
+            // Helper to safely find property (case insensitive, trim spaces, partial matches)
             const getVal = (obj, ...keys) => {
                 const objKeys = Object.keys(obj);
                 for (const key of keys) {
-                    const found = objKeys.find(k => k.toLowerCase() === key.toLowerCase());
+                    const cleanKey = key.trim().toLowerCase();
+                    // 1. Try exact match (normalized)
+                    const found = objKeys.find(k => k.trim().toLowerCase() === cleanKey);
                     if (found) return obj[found];
+                    // 2. Try partial match if exactly correct isn't found
+                    const partial = objKeys.find(k => k.trim().toLowerCase().includes(cleanKey));
+                    if (partial) return obj[partial];
                 }
                 return '';
             };
 
             // Normalize data (Handling Portuguese Headers from Sheets)
-            // Normalize data (Handling Portuguese Headers from Sheets)
             const normalized = (data || []).map((row, index) => ({
-                id: index + 2, // Row Index in Sheet (assuming header is 1, and 0-indexed array) - Adjust if header is row 1
-                date: getVal(row, 'Data da Solicitação', 'date'),
+                id: index + 2, // Fallback
+                gsRow: getVal(row, '__gs_row') || (index + 2), // Try get the real row
+                date: getVal(row, 'Data da Solicitação', 'Solicitação', 'date'),
                 consultant: getVal(row, 'Consultor', 'consultant'),
-                type: getVal(row, 'Tipo (Horário/JP/Massa)', 'type'),
-                originalDate: getVal(row, 'Data Original', 'originalDate'),
-                originalTime: getVal(row, 'Horário Original', 'originalTime'),
-                storeFrom: getVal(row, 'Loja Original', 'storeFrom', 'originalStore'),
-                storeTo: getVal(row, 'Nova Loja', 'storeTo', 'newStore'),
-                newDate: getVal(row, 'Nova Data', 'newDate'),
-                newTime: getVal(row, 'Novo Horário', 'newTime'),
+                type: getVal(row, 'Tipo', 'type'),
+                originalDate: getVal(row, 'Data Original', 'orig'),
+                originalTime: getVal(row, 'Horário Original', 'Horário Orig'),
+                storeFrom: getVal(row, 'Loja Original', 'originalStore'),
+                storeTo: getVal(row, 'Nova Loja', 'newStore'),
+                newDate: getVal(row, 'Nova Data', 'nova_da'),
+                newTime: getVal(row, 'Novo Horário', 'novo_ho'),
                 reason: getVal(row, 'Motivo', 'reason'),
                 status: getVal(row, 'Status', 'status')
             }));
@@ -476,7 +481,7 @@ export default function AdminDashboard({ onBack }) {
         if (confirm) {
             // Optimistic update
             setRawLogs(prev => prev.map(log =>
-                log.id === rowIndex ? { ...log, status: 'Feito' } : log
+                log.gsRow === rowIndex ? { ...log, status: 'Feito' } : log
             ));
 
             await updateLogStatus(rowIndex, 'Feito');
@@ -971,7 +976,7 @@ export default function AdminDashboard({ onBack }) {
                                             {log.status !== 'Feito' && (
                                                 <button
                                                     className="action-btn-approve"
-                                                    onClick={() => handleStatusUpdate(log.id, log.status)}
+                                                    onClick={() => handleStatusUpdate(log.gsRow, log.status)}
                                                     title="Marcar como Feito"
                                                 >
                                                     <Check size={16} />
