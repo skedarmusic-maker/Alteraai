@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
-import * as XLSX from 'xlsx';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
 import { saveAiReport, fetchAiReport } from '../utils/supabase';
@@ -485,34 +484,14 @@ export default function AdminDashboard({ onBack }) {
     };
 
     const handleExportExcel = () => {
-        if (!stats.filteredLogs || stats.filteredLogs.length === 0) {
-            alert("Não há dados para exportar com os filtros atuais.");
+        const downloadUrl = import.meta.env.VITE_GOOGLE_SHEETS_EXPORT_URL;
+
+        if (!downloadUrl) {
+            alert("O link de exportação do Google Sheets não foi configurado. Por favor, adicione 'VITE_GOOGLE_SHEETS_EXPORT_URL' no arquivo .env.");
             return;
         }
 
-        // Prepare data for Excel
-        const exportData = stats.filteredLogs.map(log => ({
-            'Data': new Date(log.date || Date.now()).toLocaleDateString(),
-            'Consultor': log.consultant || '',
-            'Tipo': log.type || '',
-            'Loja Original': log.storeFrom || '-',
-            'Horário Original': log.originalTime || '-',
-            'Nova Loja': log.storeTo || '-',
-            'Nova Data': log.newDate && String(log.newDate).includes('T') ? new Date(log.newDate).toLocaleDateString() : (log.newDate || '-'),
-            'Novo Horário': log.newTime || '-',
-            'Motivo': log.reason || '',
-            'Status': log.status || 'Pendente'
-        }));
-
-        // Create worksheet
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Solicitações");
-
-        // Generate and download file
-        const fileName = `Relatorio_Alteracoes_JP_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
+        window.open(downloadUrl, '_blank');
     };
 
     const COLORS = ['#FF006C', '#6A0AAA', '#FD5003', '#00C49F', '#FFBB28'];
@@ -929,9 +908,9 @@ export default function AdminDashboard({ onBack }) {
                         <button
                             className="export-excel-btn"
                             onClick={handleExportExcel}
-                            title="Exportar para Excel"
+                            title="Ver Planilha Original"
                         >
-                            <Download size={18} /> Exportar Excel
+                            <ExternalLink size={18} /> Ver Planilha (Download)
                         </button>
                         <label style={{ fontSize: '0.9rem', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                             <input
