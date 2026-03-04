@@ -498,7 +498,7 @@ export default function AdminDashboard({ onBack }) {
             </header>
 
             {/* Pending Alert - High Priority */}
-            {stats.filteredLogs.some(l => l.status !== 'Feito') && (
+            {isMaster && stats.filteredLogs.some(l => l.status !== 'Feito') && (
                 <div
                     className="pending-alert-banner"
                     onClick={() => {
