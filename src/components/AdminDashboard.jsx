@@ -3,14 +3,43 @@ import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle } from 'lucid
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
+import { saveAiReport, fetchAiReport } from '../utils/supabase';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { generateSummary } from '../utils/gemini';
 import './AdminDashboard.css';
 
+const getDominantCategory = (reasons) => {
+    if (!reasons || reasons.length === 0) return { label: 'Diversos 🔄', color: '#13c2c2', bg: 'rgba(19, 194, 194, 0.2)', border: '#13c2c2' };
+
+    // Normalizing text (exclui acentuação)
+    const text = reasons.join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (text.match(/medic[oa]|saude|atestado|hospital|dentista|exame|doente|cirurgia|sus|farmacia/)) {
+        return { label: 'Atestado 🏥', color: '#ff4d4f', bg: 'rgba(255, 77, 79, 0.2)', border: '#ff4d4f' };
+    }
+    else if (text.match(/chuva|alagamento|clima|tempo|tempestade|enchente|temporal|chovendo/)) {
+        return { label: 'Clima 🌧️', color: '#1890ff', bg: 'rgba(24, 144, 255, 0.2)', border: '#1890ff' };
+    }
+    else if (text.match(/carro|pneu|moto|oficina|mecanico|bug|app|transito|deslocamento|acidente|estrada|veiculo|quebrad[oa]|trajeto|taxi|uber/)) {
+        return { label: 'Logística 🚗', color: '#faad14', bg: 'rgba(250, 173, 20, 0.2)', border: '#faad14' };
+    }
+    else if (text.match(/treinamento|reuniao|evento|alinhamento|convencao|encontro|visita em conjunto/)) {
+        return { label: 'Alinhamento 🤝', color: '#722ed1', bg: 'rgba(114, 46, 209, 0.2)', border: '#722ed1' };
+    }
+    else if (text.match(/fechada|feriado|obra|luto|reforma|sem energia|mudanca|manutencao|assalto/)) {
+        return { label: 'Inacessível 🔒', color: '#f5222d', bg: 'rgba(245, 34, 45, 0.2)', border: '#f5222d' };
+    }
+    else if (text.match(/venda|estoque|estrategia|acoes|sellout|sell out|foco|ajuste|acao/)) {
+        return { label: 'Estratégia 🎯', color: '#52c41a', bg: 'rgba(82, 196, 26, 0.2)', border: '#52c41a' };
+    }
+
+    return { label: 'Diversos 🔄', color: '#13c2c2', bg: 'rgba(19, 194, 194, 0.2)', border: '#13c2c2' };
+};
+
 export default function AdminDashboard({ onBack }) {
     console.log("Rendering AdminDashboard");
     const user = localStorage.getItem('visitAppUser');
-    const isMaster = user && (user.toUpperCase() === 'MASTERPRO2026' || user.toUpperCase() === 'MASTER');
+    const isMaster = user && (user.toUpperCase() === 'MASTERPRO0026' || user.toUpperCase() === 'MASTER');
     const isSuperMaster = user && (user.toUpperCase() === 'SMASTERPRO');
     const [loading, setLoading] = useState(true);
     const [rawLogs, setRawLogs] = useState([]);
@@ -40,6 +69,9 @@ export default function AdminDashboard({ onBack }) {
     const [aiSummary, setAiSummary] = useState(null);
     const [individualSummaries, setIndividualSummaries] = useState({});
     const [loadingSummaries, setLoadingSummaries] = useState({});
+    const [expandedConsultant, setExpandedConsultant] = useState(null);
+    const [isSavingReport, setIsSavingReport] = useState(false);
+    const [savedReportSuccess, setSavedReportSuccess] = useState(false);
 
     // Pagination & View State
     const [showPendingOnly, setShowPendingOnly] = useState(false);
@@ -360,6 +392,33 @@ export default function AdminDashboard({ onBack }) {
 
     }, [rawLogs, filterType, dateRange, selectedConsultant, selectedType, selectedClient, loading, storeToClientMap]);
 
+    // Role-Based Auto-Fetch para Relatórios Salvos pelo Administrador Master
+    useEffect(() => {
+        if (!isSuperMaster) return;
+
+        const loadReport = async () => {
+            setIsAiLoading(true);
+            const report = await fetchAiReport(
+                filterType,
+                filterType === 'custom' ? dateRange.start : null,
+                filterType === 'custom' ? dateRange.end : null
+            );
+
+            if (report) {
+                setAiSummary(report.general_summary || "Sem texto geral salvo.");
+                setIndividualSummaries(report.individual_summaries || {});
+            } else {
+                setAiSummary("Aguardando o envio do relatório gerencial (por IA) deste período pelo administrador base.");
+                setIndividualSummaries({});
+            }
+            setIsAiLoading(false);
+        };
+
+        if (!loading) {
+            loadReport();
+        }
+    }, [filterType, dateRange.start, dateRange.end, isSuperMaster, loading]);
+
     const handleChartClick = (data, setter) => {
         if (!data) return;
         let clickedName = null;
@@ -412,6 +471,27 @@ export default function AdminDashboard({ onBack }) {
 
         setIndividualSummaries(prev => ({ ...prev, [cons.name]: result }));
         setLoadingSummaries(prev => ({ ...prev, [cons.name]: false }));
+        setSavedReportSuccess(false); // Reseta para ele lembrar que esse trecho é "novo / editado" e precisa salvar
+    };
+
+    const handleSaveReport = async () => {
+        setIsSavingReport(true);
+        setSavedReportSuccess(false);
+        try {
+            await saveAiReport({
+                filterType,
+                dateStart: filterType === 'custom' ? dateRange.start : null,
+                dateEnd: filterType === 'custom' ? dateRange.end : null,
+                generalSummary: aiSummary,
+                individualSummaries: individualSummaries
+            });
+            setSavedReportSuccess(true);
+            setTimeout(() => setSavedReportSuccess(false), 5000);
+        } catch (err) {
+            alert('Falha ao enviar relatório. Tente novamente.');
+        } finally {
+            setIsSavingReport(false);
+        }
     };
 
     const handleStatusUpdate = async (rowIndex, currentStatus) => {
@@ -703,15 +783,40 @@ export default function AdminDashboard({ onBack }) {
 
             {/* Consultant Summary & AI Analysis Area */}
             <div className="consultants-summary-area">
-                <div className="summary-section-header">
-                    <h3>Resumo por Consultor</h3>
-                    <button
-                        className="ai-action-btn"
-                        onClick={handleGenerateAI}
-                        disabled={isAiLoading || stats.byConsultantDetailed.length === 0}
-                    >
-                        {isAiLoading ? 'Analisando dados...' : '✨ Gerar Parecer com IA'}
-                    </button>
+                <div className="summary-section-header" style={{ alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <h3>Resumo geral dos motivos das alterações no JP</h3>
+                        {isSuperMaster && (
+                            <span style={{ fontSize: '0.85rem', color: '#aaa', fontWeight: 500 }}>
+                                Modo leitura de relatórios validados e enviados pela Gestão Master
+                            </span>
+                        )}
+                    </div>
+                    {isMaster && (
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button
+                                className="ai-action-btn"
+                                onClick={handleGenerateAI}
+                                disabled={isAiLoading || stats.byConsultantDetailed.length === 0}
+                            >
+                                {isAiLoading ? 'Analisando dados...' : '✨ Gerar Parecer com IA'}
+                            </button>
+
+                            {aiSummary && (
+                                <button
+                                    className="ai-action-btn"
+                                    style={{
+                                        background: savedReportSuccess ? '#52c41a' : 'linear-gradient(135deg, #FF006C, #FD5003)',
+                                        boxShadow: savedReportSuccess ? '0 4px 15px rgba(82, 196, 26, 0.3)' : undefined
+                                    }}
+                                    onClick={handleSaveReport}
+                                    disabled={isSavingReport || savedReportSuccess}
+                                >
+                                    {isSavingReport ? 'Enviando...' : savedReportSuccess ? 'Enviado!' : '📤 Enviar Relatório ao App'}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {aiSummary && (
@@ -726,45 +831,91 @@ export default function AdminDashboard({ onBack }) {
                     </div>
                 )}
 
-                <div className="consultant-cards-grid">
-                    {stats.byConsultantDetailed.map((cons, idx) => (
-                        <div key={idx} className="consultant-metric-card">
-                            <div className="cons-name">{cons.name}</div>
-                            <div className="cons-metrics">
-                                <div className="metric-col">
-                                    <span className="m-label">Lojas</span>
-                                    <span className="m-val" style={{ color: '#FF006C' }}>{cons.lojas}</span>
-                                </div>
-                                <div className="metric-col">
-                                    <span className="m-label">Horários</span>
-                                    <span className="m-val" style={{ color: '#6A0AAA' }}>{cons.horarios}</span>
-                                </div>
-                                <div className="metric-col">
-                                    <span className="m-label">Incl.</span>
-                                    <span className="m-val" style={{ color: '#FD5003' }}>{cons.inclusoes}</span>
-                                </div>
-                                <div className="metric-col" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '10px', marginLeft: '4px' }}>
-                                    <span className="m-label" style={{ color: '#FFF' }}>Total</span>
-                                    <span className="m-val" style={{ color: '#00E676' }}>{cons.total}</span>
-                                </div>
-                            </div>
+                {isSuperMaster && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                        <button
+                            className="ai-action-btn"
+                            style={{
+                                width: '100%',
+                                justifyContent: 'center',
+                                background: 'transparent',
+                                border: '1px dashed #FF006C',
+                                color: '#FF006C',
+                                boxShadow: 'none'
+                            }}
+                            onClick={() => setExpandedConsultant(expandedConsultant === 'ALL' ? null : 'ALL')}
+                        >
+                            {expandedConsultant === 'ALL' ? 'Esconder resumos individuais' : '👇 CLIQUE AQUI PARA VER O RESUMO INDIVIDUAL POR CONSULTOR 👇'}
+                        </button>
+                    </div>
+                )}
 
-                            <div className="cons-ai-section">
-                                {!individualSummaries[cons.name] && !loadingSummaries[cons.name] ? (
-                                    <button className="small-ai-btn" onClick={() => handleGenerateIndividualAI(cons)}>
-                                        ✨ Analisar Consultor
-                                    </button>
-                                ) : loadingSummaries[cons.name] ? (
-                                    <div className="small-ai-loading">Analisando...</div>
-                                ) : (
-                                    <div className="small-ai-result">
-                                        <div className="small-ai-tag">AI</div>
-                                        {individualSummaries[cons.name]}
+                <div className="consultant-accordion-list">
+                    {stats.byConsultantDetailed.map((cons, idx) => {
+                        const tag = getDominantCategory(cons.reasons);
+                        const isExpanded = expandedConsultant === cons.name || expandedConsultant === 'ALL';
+
+                        return (
+                            <div key={idx} className={`accordion-item ${isExpanded ? 'expanded' : ''}`}>
+                                <div className="accordion-header" onClick={() => {
+                                    if (expandedConsultant === 'ALL') {
+                                        setExpandedConsultant(null); // Fecha tudo caso estivesse em ALL
+                                    } else {
+                                        setExpandedConsultant(isExpanded ? null : cons.name);
+                                    }
+                                }}>
+                                    <div className="accordion-title-area">
+                                        <div className="cons-name">{cons.name}</div>
+                                        <div className="reason-tag" style={{ color: tag.color, backgroundColor: tag.bg, borderColor: tag.border }}>
+                                            {tag.label}
+                                        </div>
+                                    </div>
+
+                                    <div className="accordion-metrics">
+                                        <div className="metric-row">
+                                            <span className="m-val" style={{ color: '#FF006C' }}>{cons.lojas}</span>
+                                            <span className="m-label">Lojas</span>
+                                        </div>
+                                        <div className="metric-row">
+                                            <span className="m-val" style={{ color: '#6A0AAA' }}>{cons.horarios}</span>
+                                            <span className="m-label">Horários</span>
+                                        </div>
+                                        <div className="metric-row">
+                                            <span className="m-val" style={{ color: '#FD5003' }}>{cons.inclusoes}</span>
+                                            <span className="m-label">Incl.</span>
+                                        </div>
+                                        <div className="metric-row total-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '12px' }}>
+                                            <span className="m-val" style={{ color: '#00E676' }}>{cons.total}</span>
+                                            <span className="m-label" style={{ color: '#FFF' }}>Total</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {isExpanded && (
+                                    <div className="accordion-body">
+                                        <div className="cons-ai-section">
+                                            {!individualSummaries[cons.name] && !loadingSummaries[cons.name] ? (
+                                                isMaster ? (
+                                                    <button className="small-ai-btn accordion-ai-btn" onClick={(e) => { e.stopPropagation(); handleGenerateIndividualAI(cons); }}>
+                                                        ✨ Analisar Solicitações do(a) {cons.name}
+                                                    </button>
+                                                ) : (
+                                                    <div className="small-ai-loading" style={{ opacity: 0.6 }}>Nenhum resumo salvo para este consultor.</div>
+                                                )
+                                            ) : loadingSummaries[cons.name] ? (
+                                                <div className="small-ai-loading">Lendo os motivos e gerando análise...</div>
+                                            ) : (
+                                                <div className="small-ai-result">
+                                                    <div className="small-ai-tag">AI Summary</div>
+                                                    {individualSummaries[cons.name]}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

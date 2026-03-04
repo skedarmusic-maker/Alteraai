@@ -7,6 +7,16 @@ function App() {
   const [consultants, setConsultants] = useState([]);
 
   useEffect(() => {
+    // Acesso via link direto para o Gestor (André)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'gestor') {
+      setUser('SMASTERPRO');
+      // Limpa a URL para o usuário não ver o parâmetro e o link ficar limpo
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
     // Fetch and parse the passwords file
     fetch('/images/senhas_consultores.csv')
       .then(r => r.text())
