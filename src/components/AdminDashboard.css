@@ -581,16 +581,7 @@
     margin: 0;
 }
 
-.reason-tag {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid transparent;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
+
 
 .accordion-metrics {
     display: flex;

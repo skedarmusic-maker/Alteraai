@@ -8,33 +8,7 @@ import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDa
 import { generateSummary } from '../utils/gemini';
 import './AdminDashboard.css';
 
-const getDominantCategory = (reasons) => {
-    if (!reasons || reasons.length === 0) return { label: 'Diversos 🔄', color: '#13c2c2', bg: 'rgba(19, 194, 194, 0.2)', border: '#13c2c2' };
 
-    // Normalizing text (exclui acentuação)
-    const text = reasons.join(' ').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    if (text.match(/medic[oa]|saude|atestado|hospital|dentista|exame|doente|cirurgia|sus|farmacia/)) {
-        return { label: 'Atestado 🏥', color: '#ff4d4f', bg: 'rgba(255, 77, 79, 0.2)', border: '#ff4d4f' };
-    }
-    else if (text.match(/chuva|alagamento|clima|tempo|tempestade|enchente|temporal|chovendo/)) {
-        return { label: 'Clima 🌧️', color: '#1890ff', bg: 'rgba(24, 144, 255, 0.2)', border: '#1890ff' };
-    }
-    else if (text.match(/carro|pneu|moto|oficina|mecanico|bug|app|transito|deslocamento|acidente|estrada|veiculo|quebrad[oa]|trajeto|taxi|uber/)) {
-        return { label: 'Logística 🚗', color: '#faad14', bg: 'rgba(250, 173, 20, 0.2)', border: '#faad14' };
-    }
-    else if (text.match(/treinamento|reuniao|evento|alinhamento|convencao|encontro|visita em conjunto/)) {
-        return { label: 'Alinhamento 🤝', color: '#722ed1', bg: 'rgba(114, 46, 209, 0.2)', border: '#722ed1' };
-    }
-    else if (text.match(/fechada|feriado|obra|luto|reforma|sem energia|mudanca|manutencao|assalto/)) {
-        return { label: 'Inacessível 🔒', color: '#f5222d', bg: 'rgba(245, 34, 45, 0.2)', border: '#f5222d' };
-    }
-    else if (text.match(/venda|estoque|estrategia|acoes|sellout|sell out|foco|ajuste|acao/)) {
-        return { label: 'Estratégia 🎯', color: '#52c41a', bg: 'rgba(82, 196, 26, 0.2)', border: '#52c41a' };
-    }
-
-    return { label: 'Diversos 🔄', color: '#13c2c2', bg: 'rgba(19, 194, 194, 0.2)', border: '#13c2c2' };
-};
 
 export default function AdminDashboard({ onBack }) {
     console.log("Rendering AdminDashboard");
@@ -852,7 +826,6 @@ export default function AdminDashboard({ onBack }) {
 
                 <div className="consultant-accordion-list">
                     {stats.byConsultantDetailed.map((cons, idx) => {
-                        const tag = getDominantCategory(cons.reasons);
                         const isExpanded = expandedConsultant === cons.name || expandedConsultant === 'ALL';
 
                         return (
@@ -866,9 +839,6 @@ export default function AdminDashboard({ onBack }) {
                                 }}>
                                     <div className="accordion-title-area">
                                         <div className="cons-name">{cons.name}</div>
-                                        <div className="reason-tag" style={{ color: tag.color, backgroundColor: tag.bg, borderColor: tag.border }}>
-                                            {tag.label}
-                                        </div>
                                     </div>
 
                                     <div className="accordion-metrics">
@@ -917,10 +887,10 @@ export default function AdminDashboard({ onBack }) {
                         );
                     })}
                 </div>
-            </div>
+            </div >
 
             {/* Detailed Table */}
-            <div className="logs-table-container">
+            < div className="logs-table-container" >
                 <div className="table-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3>Detalhamento de solicitações {selectedConsultant ? `- ${selectedConsultant}` : ''} {selectedClient ? `- ${selectedClient}` : ''} </h3>
                     <div className="table-actions">
@@ -1021,24 +991,26 @@ export default function AdminDashboard({ onBack }) {
 
 
                 {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <div className="pagination-controls">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        >
-                            Anterior
-                        </button>
-                        <span>Página {currentPage} de {totalPages}</span>
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        >
-                            Próxima
-                        </button>
-                    </div>
-                )}
-            </div>
+                {
+                    totalPages > 1 && (
+                        <div className="pagination-controls">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            >
+                                Anterior
+                            </button>
+                            <span>Página {currentPage} de {totalPages}</span>
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            >
+                                Próxima
+                            </button>
+                        </div>
+                    )
+                }
+            </div >
         </div >
     );
 }
