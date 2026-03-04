@@ -489,12 +489,9 @@ export default function AdminDashboard({ onBack }) {
     };
 
     const handleExportExcel = () => {
-        const downloadUrl = import.meta.env.VITE_GOOGLE_SHEETS_EXPORT_URL;
-
-        if (!downloadUrl) {
-            alert("O link de exportação do Google Sheets não foi configurado. Por favor, adicione 'VITE_GOOGLE_SHEETS_EXPORT_URL' no arquivo .env.");
-            return;
-        }
+        // Fallback direto para garantir que funcione na Hostinger sem depender de .env
+        const downloadUrl = import.meta.env.VITE_GOOGLE_SHEETS_EXPORT_URL ||
+            "https://docs.google.com/spreadsheets/d/1z58csKdbEPoL3EKFQ9chXYVWEdN3W8ykPzt7PaAW788/export?format=xlsx";
 
         window.open(downloadUrl, '_blank');
     };
