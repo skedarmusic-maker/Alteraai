@@ -518,7 +518,7 @@ export default function AdminDashboard({ onBack }) {
             <header className="dashboard-header">
                 <div className="header-left">
                     <button onClick={onBack} className="back-btn"><ArrowLeft size={24} /></button>
-                    <h2>Painel de Gestão</h2>
+                    <h2>Relatório de alterações JP</h2>
                 </div>
                 <img src="/images/logoprotradepreto.png" alt="ProTrade Logo" className="dashboard-logo" />
             </header>
