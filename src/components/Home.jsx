@@ -117,6 +117,7 @@ export default function Home({ user, onLogout }) {
                             checkIn: inc.checkIn,
                             checkOut: inc.checkOut,
                             isNewInclusion: true,
+                            visitType: inc.visitType,
                             reason: inc.reason
                         });
                     }
