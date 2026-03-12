@@ -1,6 +1,6 @@
 export const CONTACTS = {
     GABRIEL: '11941197526',
-    ANDRE: '11973562750'
+    LARYSSA: '11973867114'
 };
 
 export const createWhatsAppLink = (number, text) => {

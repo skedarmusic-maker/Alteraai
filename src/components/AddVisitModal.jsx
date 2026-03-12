@@ -12,7 +12,7 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
     const [reason, setReason] = useState('');
 
     const handleSubmit = () => {
-        const message = `Olá, André. Gostaria de incluir uma *NOVA VISITA* nesta data:
+        const message = `Olá, Laryssa. Gostaria de incluir uma *NOVA VISITA* nesta data:
 
 📅 *Data:* ${date}
 📍 *Loja:* ${selectedStore}
@@ -56,7 +56,7 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
         localStorage.setItem('newInclusions', JSON.stringify(existing));
 
         // Open WhatsApp
-        window.open(createWhatsAppLink(CONTACTS.ANDRE, message), '_blank');
+        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
 
         onSave(); // Notify parent to refresh
         onClose();

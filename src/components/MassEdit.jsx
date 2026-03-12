@@ -54,12 +54,12 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
 
         if (mode === 'jp') {
             message = isExecution
-                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (JP)*\n✅ Já alinhado com o André.\n\n`
-                : `Olá, André. Por gentileza, é possível realizar a alteração de Loja (JP) dessas visitas abaixo?\n\n`;
+                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (JP)*\n✅ Já alinhado com a Laryssa.\n\n`
+                : `Olá, Laryssa. Por gentileza, é possível realizar a alteração de Loja (JP) dessas visitas abaixo?\n\n`;
         } else {
             message = isExecution
-                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (HORÁRIO)*\n✅ Já alinhado com o André.\n\n`
-                : `Olá, André. Por gentileza, é possível alterar o horário de atendimento dessas lojas abaixo?\n\n`;
+                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (HORÁRIO)*\n✅ Já alinhado com a Laryssa.\n\n`
+                : `Olá, Laryssa. Por gentileza, é possível alterar o horário de atendimento dessas lojas abaixo?\n\n`;
         }
 
         visits.forEach((group) => {
@@ -96,7 +96,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         return message;
     };
 
-    const handleRequestToAndre = () => {
+    const handleRequestToLaryssa = () => {
         if (selectedVisits.length === 0) return;
 
         if (hasRequestSent) {
@@ -169,7 +169,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         });
 
         const message = buildMessage(false);
-        window.open(createWhatsAppLink(CONTACTS.ANDRE, message), '_blank');
+        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
 
         setHasRequestSent(true);
         localStorage.setItem(mode === 'time' ? 'hasPendingMassTimeRequest' : 'hasPendingMassRequest', 'true');
@@ -376,7 +376,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             <div className="mass-footer mass-actions">
                 <button
                     className="primary-btn request-btn"
-                    onClick={handleRequestToAndre}
+                    onClick={handleRequestToLaryssa}
                     disabled={!isReadyToSubmit}
                     style={{
                         ...(hasRequestSent ? { background: '#4a4a4a', borderColor: '#666' } : {}),

@@ -50,7 +50,7 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
         };
         localStorage.setItem(`pendingTimeChange-${visitKey}`, JSON.stringify(requestData));
 
-        const message = `Olá, André. Gostaria de verificar a possibilidade de alteração de *HORÁRIO* nesta loja:
+        const message = `Olá, Laryssa. Gostaria de verificar a possibilidade de alteração de *HORÁRIO* nesta loja:
 
 📅 *Data:* ${visit.date}
 📍 *Loja:* ${visit.store}
@@ -72,7 +72,7 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
             reason: reason
         });
 
-        window.open(createWhatsAppLink(CONTACTS.ANDRE, message), '_blank');
+        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
         onClose();
         setHasPendingTime(true);
     };
@@ -93,7 +93,7 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
 🕒 *De:* ${data.originalCheckIn} - ${data.originalCheckOut}
 ➡️ *Para:* ${data.newCheckIn} - ${data.newCheckOut}
 
-✅ Já alinhado com o André.
+✅ Já alinhado com a Laryssa.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -116,7 +116,7 @@ Obrigado!`;
         };
         localStorage.setItem(`pendingJPChange-${visitKey}`, JSON.stringify(requestData));
 
-        const message = `Olá, André. Gostaria de verificar a possibilidade de alteração de *JP (Loja)*:
+        const message = `Olá, Laryssa. Gostaria de verificar a possibilidade de alteração de *JP (Loja)*:
 
 📍 *De:* ${visit.store}
 🕒 *Horário:* ${visit.checkIn}
@@ -144,7 +144,7 @@ Obrigado!`;
             reason: reasonJP
         });
 
-        window.open(createWhatsAppLink(CONTACTS.ANDRE, message), '_blank');
+        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
         onClose();
         setHasPendingJP(true);
     };
@@ -166,7 +166,7 @@ Obrigado!`;
 🕒 *Novo Horário:* ${data.newTime} - ${data.newTimeEnd}
 🏷️ *Tipo:* ${data.visitType || 'N/A'}
 
-✅ Já alinhado com o André.
+✅ Já alinhado com a Laryssa.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -182,7 +182,7 @@ Obrigado!`;
 
 📝 *Motivo:* ${visit.reason || 'N/A'}
 
-✅ Já alinhado com o André.
+✅ Já alinhado com a Laryssa.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -223,7 +223,7 @@ Obrigado!`;
                                         style={hasPendingTime ? { background: 'linear-gradient(135deg, #4a4a4a, #2a2a2a)' } : {}}
                                     >
                                         <span>{hasPendingTime ? 'Horário (Solicitado)' : 'Altera Horário'}</span>
-                                        {hasPendingTime ? '(Clique p/ reenviar)' : '(André)'}
+                                        {hasPendingTime ? '(Clique p/ reenviar)' : '(Laryssa)'}
                                     </button>
 
                                     {hasPendingTime && (
@@ -238,7 +238,7 @@ Obrigado!`;
                                         style={hasPendingJP ? { background: 'linear-gradient(135deg, #4a4a4a, #2a2a2a)' } : {}}
                                     >
                                         <span>{hasPendingJP ? 'JP (Solicitado)' : 'Altera JP'}</span>
-                                        {hasPendingJP ? '(Clique p/ reenviar)' : '(André)'}
+                                        {hasPendingJP ? '(Clique p/ reenviar)' : '(Laryssa)'}
                                     </button>
 
                                     {hasPendingJP && (

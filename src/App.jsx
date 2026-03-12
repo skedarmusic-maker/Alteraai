@@ -7,7 +7,7 @@ function App() {
   const [consultants, setConsultants] = useState([]);
 
   useEffect(() => {
-    // Acesso via link direto para o Gestor (André)
+    // Acesso via link direto para o Gestor (Laryssa)
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'gestor') {
       setUser('SMASTERPRO');
