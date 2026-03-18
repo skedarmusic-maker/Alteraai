@@ -54,7 +54,10 @@ export default function AdminDashboard({ onBack }) {
 
     // Derived Data for Display
     const processedLogs = stats.filteredLogs
-        .filter(log => !showPendingOnly || log.status !== 'Feito')
+        .filter(log => {
+            if (isSuperMaster && log.status !== 'Feito') return false;
+            return !showPendingOnly || log.status !== 'Feito';
+        })
         .sort((a, b) => {
             // Sort by Pending first, then by Date descending
             if (a.status !== 'Feito' && b.status === 'Feito') return -1;
@@ -914,15 +917,17 @@ export default function AdminDashboard({ onBack }) {
                         >
                             <ExternalLink size={18} /> Ver Planilha (Download)
                         </button>
-                        <label style={{ fontSize: '0.9rem', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <input
-                                type="checkbox"
-                                checked={showPendingOnly}
-                                onChange={(e) => { setShowPendingOnly(e.target.checked); setCurrentPage(1); }}
-                                style={{ marginRight: '6px' }}
-                            />
-                            Apenas Pendentes
-                        </label>
+                        {!isSuperMaster && (
+                            <label style={{ fontSize: '0.9rem', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={showPendingOnly}
+                                    onChange={(e) => { setShowPendingOnly(e.target.checked); setCurrentPage(1); }}
+                                    style={{ marginRight: '6px' }}
+                                />
+                                Apenas Pendentes
+                            </label>
+                        )}
                     </div>
                 </div>
 
