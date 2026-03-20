@@ -839,16 +839,18 @@ export default function AdminDashboard({ onBack }) {
             </div>
 
             {/* Consultant Summary & AI Analysis Area */}
-            <div className="consultants-summary-area">
-                <div className="summary-section-header" style={{ alignItems: 'flex-start' }}>
+            <details className="consultants-summary-area details-accordion" style={{ outline: 'none', cursor: 'pointer' }}>
+                <summary className="summary-section-header" style={{ alignItems: 'flex-start', listStyle: 'none' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <h3>Resumo geral dos motivos das alterações no JP</h3>
+                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>▶ Resumo geral dos motivos das alterações no JP</h3>
                         {isSuperMaster && (
                             <span style={{ fontSize: '0.85rem', color: '#aaa', fontWeight: 500 }}>
                                 Modo leitura de relatórios validados e enviados pela Gestão Master
                             </span>
                         )}
                     </div>
+                </summary>
+                <div style={{ marginTop: '24px', cursor: 'default' }}>
                     {isMaster && (
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
@@ -970,10 +972,10 @@ export default function AdminDashboard({ onBack }) {
                         );
                     })}
                 </div>
-            </div >
+            </details>
 
             {/* Detailed Table */}
-            < div className="logs-table-container" >
+            <div className="logs-table-container">
                 <div className="table-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3>Detalhamento de solicitações {selectedConsultant ? `- ${selectedConsultant}` : ''} {selectedClient ? `- ${selectedClient}` : ''} </h3>
                     <div className="table-actions" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -1012,7 +1014,7 @@ export default function AdminDashboard({ onBack }) {
                                 <th>Novo Horário</th>
                                 <th>Motivo</th>
                                 <th>Status</th>
-                                {(isMaster || isSuperMaster) && <th>Ação</th>}
+                                {(isMaster || isSuperMaster) && <th style={{ whiteSpace: 'nowrap', minWidth: '90px', paddingRight: '24px' }}>Ação</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -1111,22 +1113,6 @@ export default function AdminDashboard({ onBack }) {
                         </tbody>
                     </table>
                 </div>
-
-                {/* DEBUG SECTION */}
-                <div style={{ marginTop: '40px', padding: '20px', border: '1px solid red', backgroundColor: '#fff0f0', borderRadius: '8px' }}>
-                    <h3 style={{ color: '#d32f2f' }}>🔧 Debug Info (N/A Issue)</h3>
-                    <p><strong>Total Stores in Map:</strong> {mapDebugSize}</p>
-                    <p><strong>Unmatched Stores in Current Filter (Top 50):</strong> (These stores appear in logs but not in BASE CSV)</p>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <ol>
-                            {unmatchedStores.map((s, i) => (
-                                <li key={i}>{s}</li>
-                            ))}
-                        </ol>
-                    </div>
-                    {unmatchedStores.length === 0 && <p style={{ color: 'green' }}>All stores matched!</p>}
-                </div>
-
 
                 {/* Pagination Controls */}
                 {
