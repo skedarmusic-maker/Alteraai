@@ -17,6 +17,9 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         return !!localStorage.getItem(mode === 'time' ? 'hasPendingMassTimeExecution' : 'hasPendingMassExecution');
     });
 
+    const [isSamsungConfirm, setIsSamsungConfirm] = useState(false);
+    const [samsungMessage, setSamsungMessage] = useState('');
+
     const handleSelect = (visit, uniqueId) => {
         const isSelected = selectedVisits.includes(uniqueId);
         if (isSelected) {
@@ -170,7 +173,9 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
 
         const message = buildMessage(false);
         window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-
+        
+        setSamsungMessage(message);
+        setIsSamsungConfirm(true);
         setHasRequestSent(true);
         localStorage.setItem(mode === 'time' ? 'hasPendingMassTimeRequest' : 'hasPendingMassRequest', 'true');
     };
@@ -374,17 +379,34 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             </div>
 
             <div className="mass-footer mass-actions">
-                <button
-                    className="primary-btn request-btn"
-                    onClick={handleRequestToLaryssa}
-                    disabled={!isReadyToSubmit}
-                    style={{
-                        ...(hasRequestSent ? { background: '#4a4a4a', borderColor: '#666' } : {}),
-                        ...(!isReadyToSubmit ? { opacity: 0.5, cursor: 'not-allowed' } : {})
-                    }}
-                >
-                    <Send size={18} /> {hasRequestSent ? 'Solicitado (Reenviar)' : 'Solicitar (André)'}
-                </button>
+                {isSamsungConfirm ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                        <h4 style={{ color: '#00C49F', margin: 0 }}>✅ Mensagem Laryssa gerada!</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>O Gestor Samsung (Manuela) também precisa receber a solicitação para análise.</p>
+                        <button
+                            className="primary-btn"
+                            onClick={() => {
+                                window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
+                                setIsSamsungConfirm(false);
+                            }}
+                            style={{ background: 'linear-gradient(135deg, #0ba360, #3cba92)', width: '100%', justifyContent: 'center' }}
+                        >
+                            <Send size={18} style={{ marginRight: '8px' }} /> Enviar p/ Manuela
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        className="primary-btn request-btn"
+                        onClick={handleRequestToLaryssa}
+                        disabled={!isReadyToSubmit}
+                        style={{
+                            ...(hasRequestSent ? { background: '#4a4a4a', borderColor: '#666' } : {}),
+                            ...(!isReadyToSubmit ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                        }}
+                    >
+                        <Send size={18} /> {hasRequestSent ? 'Solicitado (Reenviar)' : 'Solicitar (Laryssa)'}
+                    </button>
+                )}
 
                 {hasRequestSent && (
                     <button

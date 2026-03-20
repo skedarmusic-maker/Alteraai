@@ -20,6 +20,16 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
     const [visitType, setVisitType] = useState('');
     const [reasonJP, setReasonJP] = useState('');
 
+    const [samsungMessage, setSamsungMessage] = useState('');
+    const [currentActionType, setCurrentActionType] = useState('');
+
+    const handleSamsungSubmit = () => {
+        window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
+        if (currentActionType === 'time') setHasPendingTime(true);
+        if (currentActionType === 'jp') setHasPendingJP(true);
+        onClose();
+    };
+
     // Check availability (visit specific)
     const visitKey = `${visit.date}-${visit.store}`;
 
@@ -73,8 +83,9 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
         });
 
         window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        onClose();
-        setHasPendingTime(true);
+        setSamsungMessage(message);
+        setCurrentActionType('time');
+        setView('samsungConfirm');
     };
 
     const handleTimeChangeExecution = () => {
@@ -145,8 +156,9 @@ Obrigado!`;
         });
 
         window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        onClose();
-        setHasPendingJP(true);
+        setSamsungMessage(message);
+        setCurrentActionType('jp');
+        setView('samsungConfirm');
     };
 
     const handleJPExecution = () => {
@@ -359,6 +371,21 @@ Obrigado!`;
                                     <Send size={16} /> Solicitar WhatsApp
                                 </button>
                             </div>
+                        </div>
+                    )}
+
+                    {view === 'samsungConfirm' && (
+                        <div className="form-view">
+                            <h3 style={{ color: '#00C49F' }}>Primeiro envio concluído!</h3>
+                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi criada para a <strong>Laryssa</strong>.</p>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#ffb74d' }}>⚠️ O Gestor Samsung (Manuela) também precisa receber a mesma solicitação para análise. Clique abaixo para prosseguir e finalizar.</p>
+                            <button
+                                className="submit-btn"
+                                onClick={handleSamsungSubmit}
+                                style={{ width: '100%', background: 'linear-gradient(135deg, #0ba360, #3cba92)' }}
+                            >
+                                <Send size={16} /> Enviar solicitação para Manuela
+                            </button>
                         </div>
                     )}
                 </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
 import { saveAiReport, fetchAiReport } from '../utils/supabase';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { generateSummary } from '../utils/gemini';
+import { createWhatsAppLink, CONSULTANT_PHONES } from '../utils/whatsapp';
 import './AdminDashboard.css';
 
 
@@ -52,10 +53,22 @@ export default function AdminDashboard({ onBack }) {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 20;
 
+    // Helper: status label + CSS class
+    const getStatusInfo = (status) => {
+        const s = (status || '').trim();
+        if (s === 'Feito') return { label: 'Feito', cssClass: 'status-done' };
+        if (s === 'Aprovado') return { label: 'Aprovado', cssClass: 'status-approved' };
+        if (s === 'Negado') return { label: 'Negado', cssClass: 'status-denied' };
+        return { label: 'Aguardando Aprovação', cssClass: 'status-pending' };
+    };
+
     // Derived Data for Display
     const processedLogs = stats.filteredLogs
         .filter(log => {
-            if (isSuperMaster && log.status !== 'Feito') return false;
+            if (isSuperMaster) {
+                // SMASTERPRO vê tudo que ainda não foi fechado (Feito)
+                return log.status !== 'Feito';
+            }
             return !showPendingOnly || log.status !== 'Feito';
         })
         .sort((a, b) => {
@@ -480,15 +493,50 @@ export default function AdminDashboard({ onBack }) {
         if (!isMaster) return;
         if (currentStatus === 'Feito') return;
 
-        const confirm = window.confirm('Deseja marcar esta solicitação como FEITO?');
+        const confirmMsg = currentStatus === 'Negado'
+            ? 'Confirmar encerramento desta solicitação (NEGADA)?'
+            : 'Deseja marcar esta solicitação como FEITO?';
+        const confirm = window.confirm(confirmMsg);
         if (confirm) {
             // Optimistic update
             setRawLogs(prev => prev.map(log =>
                 log.gsRow === rowIndex ? { ...log, status: 'Feito' } : log
             ));
-
             await updateLogStatus(rowIndex, 'Feito');
         }
+    };
+
+    const handleSuperMasterAction = async (log, action) => {
+        if (!isSuperMaster) return;
+        const newStatus = action === 'approve' ? 'Aprovado' : 'Negado';
+        const consultantFirstName = (log.consultant || '').split(' ')[0].toUpperCase();
+        const consultantPhone = CONSULTANT_PHONES[consultantFirstName];
+
+        const confirmMsg = action === 'approve'
+            ? `Confirmar APROVAÇÃO da solicitação de ${consultantFirstName}?`
+            : `Confirmar NEGAÇÃO da solicitação de ${consultantFirstName}?`;
+        if (!window.confirm(confirmMsg)) return;
+
+        // Optimistic update
+        setRawLogs(prev => prev.map(l =>
+            l.gsRow === log.gsRow ? { ...l, status: newStatus } : l
+        ));
+        await updateLogStatus(log.gsRow, newStatus);
+
+        // Montar mensagem de retorno ao consultor
+        const storeInfo = log.storeTo && log.storeTo !== log.storeFrom
+            ? `🏪 De: ${log.storeFrom} → Para: ${log.storeTo}`
+            : `🏪 Loja: ${log.storeFrom || '-'}`;
+        const dateInfo = log.originalDate || log.date || '-';
+
+        let waMsg;
+        if (action === 'approve') {
+            waMsg = `✅ *Sua solicitação foi APROVADA!*\n\n📅 *Data:* ${dateInfo}\n${storeInfo}\n\nVocê já pode prosseguir e executar a alteração normalmente pelo app. 👍`;
+        } else {
+            waMsg = `❌ *Sua solicitação foi NEGADA.*\n\n📅 *Data:* ${dateInfo}\n${storeInfo}\n\nEntre em contato com o gestor para mais informações.`;
+        }
+
+        window.open(createWhatsAppLink(consultantPhone || null, waMsg), '_blank');
     };
 
     const handleExportExcel = () => {
@@ -513,21 +561,40 @@ export default function AdminDashboard({ onBack }) {
                 <img src="/images/logoprotradepreto.png" alt="ProTrade Logo" className="dashboard-logo" />
             </header>
 
-            {/* Pending Alert - High Priority */}
+            {/* Pending Alert - High Priority - MASTER */}
             {isMaster && stats.filteredLogs.some(l => l.status !== 'Feito') && (
                 <div
                     className="pending-alert-banner"
                     onClick={() => {
-                        // Optional: Auto filter to pending if desired? 
-                        // For now just scroll to table
                         document.querySelector('.logs-table-container')?.scrollIntoView({ behavior: 'smooth' });
                     }}
                 >
                     <div className="alert-content">
                         <AlertCircle size={24} color="#FFF" />
                         <div className="alert-text">
-                            <h3>{stats.filteredLogs.filter(l => l.status !== 'Feito').length} Solicitações Pendentes</h3>
-                            <p>Clique para ver os detalhes e aprovar</p>
+                            <h3>{stats.filteredLogs.filter(l => l.status !== 'Feito').length} Solicitações em aberto</h3>
+                            <p>Clique para ver os detalhes</p>
+                        </div>
+                    </div>
+                    <div className="alert-action">
+                        Ver Lista <ArrowLeft size={16} style={{ transform: 'rotate(-90deg)' }} />
+                    </div>
+                </div>
+            )}
+
+            {/* Pending Alert - SMASTERPRO */}
+            {isSuperMaster && stats.filteredLogs.some(l => !l.status || l.status === 'Aguardando Aprovação' || l.status === 'Pendente') && (
+                <div
+                    className="pending-alert-banner"
+                    onClick={() => {
+                        document.querySelector('.logs-table-container')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                >
+                    <div className="alert-content">
+                        <AlertCircle size={24} color="#FFF" />
+                        <div className="alert-text">
+                            <h3>{stats.filteredLogs.filter(l => !l.status || l.status === 'Aguardando Aprovação' || l.status === 'Pendente').length} Solicitações aguardando sua decisão</h3>
+                            <p>Aprove ou negue cada item abaixo</p>
                         </div>
                     </div>
                     <div className="alert-action">
@@ -945,7 +1012,7 @@ export default function AdminDashboard({ onBack }) {
                                 <th>Novo Horário</th>
                                 <th>Motivo</th>
                                 <th>Status</th>
-                                {isMaster && <th>Ação</th>}
+                                {(isMaster || isSuperMaster) && <th>Ação</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -969,20 +1036,66 @@ export default function AdminDashboard({ onBack }) {
                                     <td>{log.newTime || '-'}</td>
                                     <td className="reason-cell" data-reason={log.reason} title={log.reason}>{log.reason}</td>
                                     <td>
-                                        <span className={`status-badge ${log.status === 'Feito' ? 'status-done' : 'status-pending'}`}>
-                                            {log.status || 'Pendente'}
-                                        </span>
+                                        {(() => {
+                                            const { label, cssClass } = getStatusInfo(log.status);
+                                            return <span className={`status-badge ${cssClass}`}>{label}</span>;
+                                        })()}
                                     </td>
-                                    {isMaster && (
+                                    {(isMaster || isSuperMaster) && (
                                         <td>
-                                            {log.status !== 'Feito' && (
-                                                <button
-                                                    className="action-btn-approve"
-                                                    onClick={() => handleStatusUpdate(log.gsRow, log.status)}
-                                                    title="Marcar como Feito"
-                                                >
-                                                    <Check size={16} />
-                                                </button>
+                                            {isSuperMaster ? (
+                                                // Botões Aprovar / Negar para SMASTERPRO
+                                                (() => {
+                                                    const s = (log.status || '').trim();
+                                                    const isWaiting = !s || s === 'Aguardando Aprovação' || s === 'Pendente';
+                                                    if (!isWaiting) return null;
+                                                    return (
+                                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                                            <button
+                                                                className="action-btn-approve"
+                                                                onClick={() => handleSuperMasterAction(log, 'approve')}
+                                                                title="Aprovar solicitação"
+                                                            >
+                                                                <Check size={16} />
+                                                            </button>
+                                                            <button
+                                                                className="action-btn-deny"
+                                                                onClick={() => handleSuperMasterAction(log, 'deny')}
+                                                                title="Negar solicitação"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })()
+                                            ) : (
+                                                // Botão FEITO para MASTERPRO (bloqueado se esperando Samsung)
+                                                (() => {
+                                                    const s = (log.status || '').trim();
+                                                    if (s === 'Feito') return null;
+                                                    const isWaiting = !s || s === 'Aguardando Aprovação' || s === 'Pendente';
+                                                    if (isWaiting) {
+                                                        return (
+                                                            <button
+                                                                className="action-btn-approve"
+                                                                disabled
+                                                                title="Aguardando decisão da Samsung"
+                                                                style={{ opacity: 0.35, cursor: 'not-allowed' }}
+                                                            >
+                                                                ⏳
+                                                            </button>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <button
+                                                            className={s === 'Negado' ? 'action-btn-deny' : 'action-btn-approve'}
+                                                            onClick={() => handleStatusUpdate(log.gsRow, log.status)}
+                                                            title={s === 'Negado' ? 'Encerrar (Negado)' : 'Marcar como Feito'}
+                                                        >
+                                                            <Check size={16} />
+                                                        </button>
+                                                    );
+                                                })()
                                             )}
                                         </td>
                                     )}

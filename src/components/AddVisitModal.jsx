@@ -11,6 +11,10 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
     const [visitType, setVisitType] = useState('');
     const [reason, setReason] = useState('');
 
+    // Estado da Aprovação Dupla (Laryssa -> Samsung)
+    const [isSamsungConfirm, setIsSamsungConfirm] = useState(false);
+    const [samsungMessage, setSamsungMessage] = useState('');
+
     const handleSubmit = () => {
         const message = `Olá, Laryssa. Gostaria de incluir uma *NOVA VISITA* nesta data:
 
@@ -48,17 +52,20 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
             reason: reason
         });
 
-        // Save to local storage (handled by parent or here? Better here to encapsulate logic, but parent needs to update state)
-        // actually parent usually reloads or updates state. Let's pass data to onSave to handle state update.
-        // We will manage LocalStorage here to ensure it's saved.
+        // Save to local storage
         const existing = JSON.parse(localStorage.getItem('newInclusions') || '[]');
         existing.push(newInclusion);
         localStorage.setItem('newInclusions', JSON.stringify(existing));
 
-        // Open WhatsApp
+        // Open WhatsApp para Laryssa e avança tela
         window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
+        setSamsungMessage(message);
+        setIsSamsungConfirm(true);
+    };
 
-        onSave(); // Notify parent to refresh
+    const handleSamsungSubmit = () => {
+        window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
+        onSave();
         onClose();
     };
 
@@ -82,8 +89,22 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
                 </div>
 
                 <div className="modal-body">
-                    <div className="form-view">
-                        <div className="input-group">
+                    {isSamsungConfirm ? (
+                        <div className="form-view">
+                            <h3 style={{ color: '#00C49F' }}>Primeiro envio concluído!</h3>
+                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi criada para a <strong>Laryssa</strong>.</p>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#ffb74d' }}>⚠️ O Gestor Samsung (Manuela) também precisa receber a mesma solicitação para análise. Clique abaixo para prosseguir e finalizar.</p>
+                            <button
+                                className="submit-btn"
+                                onClick={handleSamsungSubmit}
+                                style={{ width: '100%', background: 'linear-gradient(135deg, #0ba360, #3cba92)' }}
+                            >
+                                <Send size={16} /> Enviar solicitação para Manuela
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="form-view">
+                            <div className="input-group">
                             <label>Loja</label>
                             <select
                                 value={selectedStore}
@@ -119,7 +140,6 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
                                 <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
                             </div>
                         </div>
-
                         <div className="input-group">
                             <label>Motivo</label>
                             <textarea
@@ -141,7 +161,8 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
                                 <Send size={16} /> Incluir (WhatsApp)
                             </button>
                         </div>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </motion.div>

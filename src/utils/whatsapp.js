@@ -1,6 +1,18 @@
 export const CONTACTS = {
     GABRIEL: '11941197526',
-    LARYSSA: '11973867114'
+    LARYSSA: '11973867114',
+    SAMSUNG_GESTOR: '11976919955'
+};
+
+// Mapeamento: primeiro nome do consultor → telefone WhatsApp
+export const CONSULTANT_PHONES = {
+    'LUIZ': '11972182624',
+    'DIOGO': '11916117591',
+    'ALEXANDRE': '11943213107',
+    'LIEDY': '11956871196',
+    'PAULO': '11942545951',
+    'MARCIO': '11973999410',
+    'TATIANE': '11944726245',
 };
 
 export const createWhatsAppLink = (number, text) => {
