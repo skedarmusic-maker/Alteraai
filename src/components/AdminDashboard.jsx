@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink, ThumbsUp, ThumbsDown, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
@@ -7,15 +7,18 @@ import { saveAiReport, fetchAiReport } from '../utils/supabase';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { generateSummary } from '../utils/gemini';
 import { createWhatsAppLink, CONSULTANT_PHONES } from '../utils/whatsapp';
+import ConsultantScheduleViewer, { CONSULTANTS } from './ConsultantScheduleViewer';
 import './AdminDashboard.css';
 
 
 
 export default function AdminDashboard({ onBack }) {
-    console.log("Rendering AdminDashboard");
     const user = localStorage.getItem('visitAppUser');
     const isMaster = user && (user.toUpperCase() === 'MASTERPRO0026' || user.toUpperCase() === 'MASTER');
     const isSuperMaster = user && (user.toUpperCase() === 'SMASTERPRO');
+
+    // Roteiro de consultor (visualizacao somente leitura)
+    const [viewingConsultant, setViewingConsultant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [rawLogs, setRawLogs] = useState([]);
     const [storeToClientMap, setStoreToClientMap] = useState({});
@@ -549,6 +552,16 @@ export default function AdminDashboard({ onBack }) {
 
     const COLORS = ['#FF006C', '#6A0AAA', '#FD5003', '#00C49F', '#FFBB28'];
 
+    // Roteiro somente leitura - early return
+    if (viewingConsultant) {
+        return (
+            <ConsultantScheduleViewer
+                consultantName={viewingConsultant}
+                onBack={() => setViewingConsultant(null)}
+            />
+        );
+    }
+
     if (loading) return <div className="loading-screen">Carregando Dashboard...</div>;
 
     return (
@@ -560,6 +573,22 @@ export default function AdminDashboard({ onBack }) {
                 </div>
                 <img src="/images/logoprotradepreto.png" alt="ProTrade Logo" className="dashboard-logo" />
             </header>
+
+            {/* Pílulas de consultores - MASTERPRO0026 e SMASTERPRO */}
+            {(isMaster || isSuperMaster) && (
+                <div className="consultant-pills-bar">
+                    <span className="pills-label"><Eye size={14} /> Ver roteiro:</span>
+                    {CONSULTANTS.map(c => (
+                        <button
+                            key={c.key}
+                            className="consultant-pill"
+                            onClick={() => setViewingConsultant(c.label)}
+                        >
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Pending Alert - High Priority - MASTER */}
             {isMaster && stats.filteredLogs.some(l => l.status !== 'Feito') && (
