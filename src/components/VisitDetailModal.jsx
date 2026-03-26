@@ -20,16 +20,6 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
     const [visitType, setVisitType] = useState('');
     const [reasonJP, setReasonJP] = useState('');
 
-    const [samsungMessage, setSamsungMessage] = useState('');
-    const [currentActionType, setCurrentActionType] = useState('');
-
-    const handleSamsungSubmit = () => {
-        window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
-        if (currentActionType === 'time') setHasPendingTime(true);
-        if (currentActionType === 'jp') setHasPendingJP(true);
-        onClose();
-    };
-
     // Check availability (visit specific)
     const visitKey = `${visit.date}-${visit.store}`;
 
@@ -60,7 +50,7 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
         };
         localStorage.setItem(`pendingTimeChange-${visitKey}`, JSON.stringify(requestData));
 
-        const message = `Olá, Laryssa. Gostaria de verificar a possibilidade de alteração de *HORÁRIO* nesta loja:
+        const message = `Olá, Manuela. Gostaria de verificar a possibilidade de alteração de *HORÁRIO* nesta loja:
 
 📅 *Data:* ${visit.date}
 📍 *Loja:* ${visit.store}
@@ -82,10 +72,9 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
             reason: reason
         });
 
-        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        setSamsungMessage(message);
-        setCurrentActionType('time');
-        setView('samsungConfirm');
+        window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
+        setHasPendingTime(true);
+        setView('success');
     };
 
     const handleTimeChangeExecution = () => {
@@ -104,7 +93,7 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
 🕒 *De:* ${data.originalCheckIn} - ${data.originalCheckOut}
 ➡️ *Para:* ${data.newCheckIn} - ${data.newCheckOut}
 
-✅ Já alinhado com a Laryssa.
+✅ Já alinhado com a Manuela.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -127,7 +116,7 @@ Obrigado!`;
         };
         localStorage.setItem(`pendingJPChange-${visitKey}`, JSON.stringify(requestData));
 
-        const message = `Olá, Laryssa. Gostaria de verificar a possibilidade de alteração de *JP (Loja)*:
+        const message = `Olá, Manuela. Gostaria de verificar a possibilidade de alteração de *JP (Loja)*:
 
 📍 *De:* ${visit.store}
 🕒 *Horário:* ${visit.checkIn}
@@ -155,10 +144,9 @@ Obrigado!`;
             reason: reasonJP
         });
 
-        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        setSamsungMessage(message);
-        setCurrentActionType('jp');
-        setView('samsungConfirm');
+        window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
+        setHasPendingJP(true);
+        setView('success');
     };
 
     const handleJPExecution = () => {
@@ -178,7 +166,7 @@ Obrigado!`;
 🕒 *Novo Horário:* ${data.newTime} - ${data.newTimeEnd}
 🏷️ *Tipo:* ${data.visitType || 'N/A'}
 
-✅ Já alinhado com a Laryssa.
+✅ Já alinhado com a Manuela.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -194,7 +182,7 @@ Obrigado!`;
 
 📝 *Motivo:* ${visit.reason || 'N/A'}
 
-✅ Já alinhado com a Laryssa.
+✅ Já alinhado com a Manuela.
 Obrigado!`;
 
         window.open(createWhatsAppLink(null, message), '_blank');
@@ -235,7 +223,7 @@ Obrigado!`;
                                         style={hasPendingTime ? { background: 'linear-gradient(135deg, #4a4a4a, #2a2a2a)' } : {}}
                                     >
                                         <span>{hasPendingTime ? 'Horário (Solicitado)' : 'Altera Horário'}</span>
-                                        {hasPendingTime ? '(Clique p/ reenviar)' : '(Laryssa)'}
+                                        {hasPendingTime ? '(Clique p/ reenviar)' : '(Manuela)'}
                                     </button>
 
                                     {hasPendingTime && (
@@ -250,7 +238,7 @@ Obrigado!`;
                                         style={hasPendingJP ? { background: 'linear-gradient(135deg, #4a4a4a, #2a2a2a)' } : {}}
                                     >
                                         <span>{hasPendingJP ? 'JP (Solicitado)' : 'Altera JP'}</span>
-                                        {hasPendingJP ? '(Clique p/ reenviar)' : '(Laryssa)'}
+                                        {hasPendingJP ? '(Clique p/ reenviar)' : '(Manuela)'}
                                     </button>
 
                                     {hasPendingJP && (
@@ -374,17 +362,17 @@ Obrigado!`;
                         </div>
                     )}
 
-                    {view === 'samsungConfirm' && (
+                    {view === 'success' && (
                         <div className="form-view">
-                            <h3 style={{ color: '#00C49F' }}>Primeiro envio concluído!</h3>
-                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi criada para a <strong>Laryssa</strong>.</p>
-                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#ffb74d' }}>⚠️ O Gestor Samsung (Manuela) também precisa receber a mesma solicitação para análise. Clique abaixo para prosseguir e finalizar.</p>
+                            <h3 style={{ color: '#00C49F' }}>Solicitação enviada!</h3>
+                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi gerada para a <strong>Manuela</strong>.</p>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#aaa' }}>Lembre-se de encaminhar a mensagem no WhatsApp para finalizar.</p>
                             <button
                                 className="submit-btn"
-                                onClick={handleSamsungSubmit}
-                                style={{ width: '100%', background: 'linear-gradient(135deg, #0ba360, #3cba92)' }}
+                                onClick={onClose}
+                                style={{ width: '100%', background: 'var(--color-primary-purple)' }}
                             >
-                                <Send size={16} /> Enviar solicitação para Manuela
+                                Ok, entendi
                             </button>
                         </div>
                     )}

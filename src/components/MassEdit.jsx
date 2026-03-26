@@ -17,8 +17,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         return !!localStorage.getItem(mode === 'time' ? 'hasPendingMassTimeExecution' : 'hasPendingMassExecution');
     });
 
-    const [isSamsungConfirm, setIsSamsungConfirm] = useState(false);
-    const [samsungMessage, setSamsungMessage] = useState('');
+    const [isSent, setIsSent] = useState(false);
 
     const handleSelect = (visit, uniqueId) => {
         const isSelected = selectedVisits.includes(uniqueId);
@@ -57,12 +56,12 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
 
         if (mode === 'jp') {
             message = isExecution
-                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (JP)*\n✅ Já alinhado com a Laryssa.\n\n`
-                : `Olá, Laryssa. Por gentileza, é possível realizar a alteração de Loja (JP) dessas visitas abaixo?\n\n`;
+                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (JP)*\n✅ Já alinhado com a Manuela.\n\n`
+                : `Olá, Manuela. Por gentileza, é possível realizar a alteração de Loja (JP) dessas visitas abaixo?\n\n`;
         } else {
             message = isExecution
-                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (HORÁRIO)*\n✅ Já alinhado com a Laryssa.\n\n`
-                : `Olá, Laryssa. Por gentileza, é possível alterar o horário de atendimento dessas lojas abaixo?\n\n`;
+                ? `*EXECUÇÃO DE ALTERAÇÃO EM MASSA (HORÁRIO)*\n✅ Já alinhado com a Manuela.\n\n`
+                : `Olá, Manuela. Por gentileza, é possível alterar o horário de atendimento dessas lojas abaixo?\n\n`;
         }
 
         visits.forEach((group) => {
@@ -99,7 +98,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         return message;
     };
 
-    const handleRequestToLaryssa = () => {
+    const handleRequestToManuela = () => {
         if (selectedVisits.length === 0) return;
 
         if (hasRequestSent) {
@@ -171,11 +170,9 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             });
         });
 
-        const message = buildMessage(false);
-        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        
-        setSamsungMessage(message);
-        setIsSamsungConfirm(true);
+        // Open WhatsApp with Manuela contact
+        window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
+        // Mark request as sent
         setHasRequestSent(true);
         localStorage.setItem(mode === 'time' ? 'hasPendingMassTimeRequest' : 'hasPendingMassRequest', 'true');
     };
@@ -379,32 +376,29 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             </div>
 
             <div className="mass-footer mass-actions">
-                {isSamsungConfirm ? (
+                {isSent ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                        <h4 style={{ color: '#00C49F', margin: 0 }}>✅ Mensagem Laryssa gerada!</h4>
-                        <p style={{ margin: 0, fontSize: '0.9rem' }}>O Gestor Samsung (Manuela) também precisa receber a solicitação para análise.</p>
+                        <h4 style={{ color: '#00C49F', margin: 0 }}>✅ Solicitação Manuela gerada!</h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>Lembre-se de encaminhar no WhatsApp para oficializar.</p>
                         <button
                             className="primary-btn"
-                            onClick={() => {
-                                window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
-                                setIsSamsungConfirm(false);
-                            }}
-                            style={{ background: 'linear-gradient(135deg, #0ba360, #3cba92)', width: '100%', justifyContent: 'center' }}
+                            onClick={() => setIsSent(false)}
+                            style={{ background: 'var(--color-primary-purple)', width: '100%', justifyContent: 'center' }}
                         >
-                            <Send size={18} style={{ marginRight: '8px' }} /> Enviar p/ Manuela
+                            Ok, entendi
                         </button>
                     </div>
                 ) : (
                     <button
                         className="primary-btn request-btn"
-                        onClick={handleRequestToLaryssa}
+                        onClick={handleRequestToManuela}
                         disabled={!isReadyToSubmit}
                         style={{
                             ...(hasRequestSent ? { background: '#4a4a4a', borderColor: '#666' } : {}),
                             ...(!isReadyToSubmit ? { opacity: 0.5, cursor: 'not-allowed' } : {})
                         }}
                     >
-                        <Send size={18} /> {hasRequestSent ? 'Solicitado (Reenviar)' : 'Solicitar (Laryssa)'}
+                        <Send size={18} /> {hasRequestSent ? 'Solicitado (Reenviar)' : 'Solicitar (Manuela)'}
                     </button>
                 )}
 

@@ -22,7 +22,7 @@ export default function Home({ user, onLogout }) {
     const [selectedDateForAdd, setSelectedDateForAdd] = useState(null);
     const todayRef = useRef(null);
 
-    const ADMINS = ['GABRIEL', 'LARYSSA', 'GABRIEL AMORIM', 'MASTERPRO2026', 'MASTER', 'SMASTERPRO'];
+    const ADMINS = ['GABRIEL', 'MANUELA', 'GABRIEL AMORIM', 'MASTERPRO2026', 'MASTER', 'SMASTERPRO'];
     const isAdmin = ADMINS.includes(user?.toUpperCase());
 
     // DEBUG STATE

@@ -11,12 +11,11 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
     const [visitType, setVisitType] = useState('');
     const [reason, setReason] = useState('');
 
-    // Estado da Aprovação Dupla (Laryssa -> Samsung)
-    const [isSamsungConfirm, setIsSamsungConfirm] = useState(false);
-    const [samsungMessage, setSamsungMessage] = useState('');
+    // Estado da aprovação (Manuela)
+    const [isSent, setIsSent] = useState(false);
 
     const handleSubmit = () => {
-        const message = `Olá, Laryssa. Gostaria de incluir uma *NOVA VISITA* nesta data:
+        const message = `Olá, Manuela. Gostaria de incluir uma *NOVA VISITA* nesta data:
 
 📅 *Data:* ${date}
 📍 *Loja:* ${selectedStore}
@@ -57,14 +56,12 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
         existing.push(newInclusion);
         localStorage.setItem('newInclusions', JSON.stringify(existing));
 
-        // Open WhatsApp para Laryssa e avança tela
-        window.open(createWhatsAppLink(CONTACTS.LARYSSA, message), '_blank');
-        setSamsungMessage(message);
-        setIsSamsungConfirm(true);
+        // Open WhatsApp para Manuela e avança tela
+        window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
+        setIsSent(true);
     };
 
-    const handleSamsungSubmit = () => {
-        window.open(createWhatsAppLink(CONTACTS.SAMSUNG_GESTOR, samsungMessage), '_blank');
+    const handleConfirmClose = () => {
         onSave();
         onClose();
     };
@@ -89,17 +86,17 @@ export default function AddVisitModal({ date, availableStores = [], onClose, use
                 </div>
 
                 <div className="modal-body">
-                    {isSamsungConfirm ? (
+                    {isSent ? (
                         <div className="form-view">
-                            <h3 style={{ color: '#00C49F' }}>Primeiro envio concluído!</h3>
-                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi criada para a <strong>Laryssa</strong>.</p>
-                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#ffb74d' }}>⚠️ O Gestor Samsung (Manuela) também precisa receber a mesma solicitação para análise. Clique abaixo para prosseguir e finalizar.</p>
+                            <h3 style={{ color: '#00C49F' }}>Solicitação enviada!</h3>
+                            <p style={{ margin: '16px 0', fontSize: '15px' }}>✅ A mensagem foi gerada para a <strong>Manuela</strong>.</p>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#aaa' }}>Lembre-se de encaminhar a mensagem no WhatsApp para finalizar.</p>
                             <button
                                 className="submit-btn"
-                                onClick={handleSamsungSubmit}
-                                style={{ width: '100%', background: 'linear-gradient(135deg, #0ba360, #3cba92)' }}
+                                onClick={handleConfirmClose}
+                                style={{ width: '100%', background: 'var(--color-primary-purple)' }}
                             >
-                                <Send size={16} /> Enviar solicitação para Manuela
+                                Ok, entendi
                             </button>
                         </div>
                     ) : (
