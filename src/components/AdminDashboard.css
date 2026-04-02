@@ -442,15 +442,15 @@
 .logs-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
-    min-width: 800px;
+    font-size: 0.82rem;
+    min-width: 900px;
     /* Force scroll on mobile */
 }
 
 .logs-table th,
 .logs-table td {
     text-align: left;
-    padding: 12px;
+    padding: 9px 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -458,8 +458,8 @@
     color: rgba(255, 255, 255, 0.5);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
 }
 
 .logs-table td {
@@ -472,11 +472,12 @@
 }
 
 .badge {
-    padding: 4px 8px;
+    padding: 3px 7px;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .badge-jp {
@@ -493,6 +494,19 @@
 .badge-massa {
     background: rgba(253, 80, 3, 0.2);
     color: var(--color-primary-orange);
+}
+
+/* Tipo de Visita badges */
+.badge-simples {
+    background: rgba(0, 196, 159, 0.15);
+    color: #00C49F;
+    border: 1px solid rgba(0, 196, 159, 0.3);
+}
+
+.badge-completa {
+    background: rgba(255, 187, 40, 0.15);
+    color: #FFBB28;
+    border: 1px solid rgba(255, 187, 40, 0.3);
 }
 
 .reason-cell {

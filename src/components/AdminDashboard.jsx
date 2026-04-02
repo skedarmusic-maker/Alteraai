@@ -119,6 +119,7 @@ export default function AdminDashboard({ onBack }) {
                 storeTo: getVal(row, 'Nova Loja', 'newStore'),
                 newDate: getVal(row, 'Nova Data', 'nova_da'),
                 newTime: getVal(row, 'Novo Horário', 'novo_ho'),
+                visitType: getVal(row, 'Tipo de Visita', 'visitType', 'Tipo Visita'),
                 reason: getVal(row, 'Motivo', 'reason'),
                 status: getVal(row, 'Status', 'status')
             }));
@@ -1037,13 +1038,14 @@ export default function AdminDashboard({ onBack }) {
                                 <th>Consultor</th>
                                 <th>Tipo</th>
                                 <th>Loja Original</th>
-                                <th>Horário Orig.</th>
+                                <th>Orig.</th>
                                 <th>Nova Loja</th>
                                 <th>Nova Data</th>
-                                <th>Novo Horário</th>
+                                <th>Novo Hor.</th>
+                                <th style={{ whiteSpace: 'nowrap' }}>Tipo Visita</th>
                                 <th>Motivo</th>
                                 <th>Status</th>
-                                {(isMaster || isSuperMaster) && <th style={{ whiteSpace: 'nowrap', minWidth: '90px', paddingRight: '24px' }}>Ação</th>}
+                                {(isMaster || isSuperMaster) && <th style={{ whiteSpace: 'nowrap', minWidth: '80px', paddingRight: '16px' }}>Ação</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -1065,6 +1067,13 @@ export default function AdminDashboard({ onBack }) {
                                             : (log.newDate || '-')}
                                     </td>
                                     <td>{log.newTime || '-'}</td>
+                                    <td>
+                                        {log.visitType ? (
+                                            <span className={`badge badge-visittype ${log.visitType.toLowerCase() === 'completa' ? 'badge-completa' : 'badge-simples'}`}>
+                                                {log.visitType}
+                                            </span>
+                                        ) : <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem' }}>—</span>}
+                                    </td>
                                     <td className="reason-cell" data-reason={log.reason} title={log.reason}>{log.reason}</td>
                                     <td>
                                         {(() => {
@@ -1134,7 +1143,7 @@ export default function AdminDashboard({ onBack }) {
                             ))}
                             {paginatedLogs.length === 0 && (
                                 <tr>
-                                    <td colSpan="11" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                                    <td colSpan="12" style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
                                         Nenhum registro encontrado para este filtro.
                                     </td>
                                 </tr>

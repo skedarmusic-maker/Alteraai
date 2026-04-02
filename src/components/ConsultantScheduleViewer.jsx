@@ -7,13 +7,13 @@ import { isToday as checkIsToday } from 'date-fns';
 
 // Lista oficial de consultores
 export const CONSULTANTS = [
-    { label: 'Luiz',      key: 'LUIZ' },
-    { label: 'Diogo',     key: 'DIOGO' },
+    { label: 'Luiz', key: 'LUIZ' },
+    { label: 'Diogo', key: 'DIOGO' },
     { label: 'Alexandre', key: 'ALEXANDRE' },
-    { label: 'Liedy',     key: 'LIEDY' },
-    { label: 'Paulo',     key: 'PAULO' },
-    { label: 'Marcio',    key: 'MARCIO' },
-    { label: 'Tatiane',   key: 'TATIANE' },
+    { label: 'Liedy', key: 'LIEDY' },
+    { label: 'Paulo', key: 'PAULO' },
+    { label: 'Marcio', key: 'MARCIO' },
+    { label: 'Tatiane', key: 'TATIANE' },
 ];
 
 export default function ConsultantScheduleViewer({ consultantName, onBack }) {
