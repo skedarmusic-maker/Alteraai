@@ -39,7 +39,7 @@ const importLocais = async () => {
         id: currentId++,
         rede: row.bandeira || '',
         cliente: row.cliente || '',
-        loja: row.nome_pdv_antigo || '',
+        loja: row.nome_pdv_novo || '',
         consultor: row.responsável_1 || row.responsável || '',
         cnpj: row.cnpj || '',
         nome_pdv: row.nome_pdv_novo || ''
