@@ -37,10 +37,46 @@ export async function fetchAiReport(filterType, dateStart, dateEnd) {
     // Pegando sempre o mais recente que bater com o filtro
     query = query.order('created_at', { ascending: false }).limit(1);
 
-    const { data, error } = await query;
+    const { data, error } = query;
     if (error) {
         console.error("Erro ao buscar relatório de IA:", error);
         return null;
     }
     return data && data.length > 0 ? data[0] : null;
+}
+
+// ==========================================
+// Solicitations (Duplicate Prevention)
+// ==========================================
+
+export async function checkDuplicateSolicitation(sol) {
+    const { data, error } = await supabase
+        .from('solicitations')
+        .select('id')
+        .eq('consultant', sol.consultant)
+        .eq('original_date', sol.original_date)
+        .eq('store_from', sol.store_from)
+        .eq('new_store', sol.new_store || sol.store_from)
+        .eq('new_time', sol.new_time)
+        .neq('status', 'Negado') // Se foi negado, ele pode tentar de novo
+        .limit(1);
+
+    if (error) {
+        console.error("Erro ao verificar duplicidade:", error);
+        return false;
+    }
+    return data && data.length > 0;
+}
+
+export async function saveSolicitation(sol) {
+    const { data, error } = await supabase
+        .from('solicitations')
+        .insert([sol]);
+
+    if (error) {
+        // Se cair aqui por causa da constraint UNIQUE, tratamos como duplicado
+        if (error.code === '23505') return { duplicate: true };
+        throw error;
+    }
+    return { success: true, data };
 }

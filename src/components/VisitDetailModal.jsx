@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, MapPin, ArrowRight, Send } from 'lucide-react';
 import { createWhatsAppLink, CONTACTS } from '../utils/whatsapp';
 import { logToSheet } from '../utils/logger';
+import { checkDuplicateSolicitation, saveSolicitation } from '../utils/supabase';
 
 export default function VisitDetailModal({ visit, availableStores = [], onClose, user }) {
     const [view, setView] = useState('menu'); // menu, formA, formC
@@ -33,11 +34,29 @@ export default function VisitDetailModal({ visit, availableStores = [], onClose,
         return !!saved;
     });
 
-    const handleTimeChangeRequest = () => {
+    const handleTimeChangeRequest = async () => {
+        const solicitation = {
+            consultant: user,
+            original_date: visit.date,
+            store_from: visit.store,
+            new_store: visit.store,
+            new_time: `${newCheckIn}-${newCheckOut}`,
+            visit_type: 'Alteração Horário',
+            reason: reason
+        };
+
+        const isDup = await checkDuplicateSolicitation(solicitation);
+        if (isDup) {
+            alert(`⚠️ BLOQUEIO DE DUPLICIDADE:\n\nJá existe uma solicitação idêntica para esta visita (${visit.date} - ${visit.store}) aguardando aprovação.`);
+            return;
+        }
+
         if (hasPendingTime) {
             const confirmResend = window.confirm("Você já solicitou alteração de horário para esta visita. Deseja enviar novamente?");
             if (!confirmResend) return;
         }
+
+        await saveSolicitation(solicitation);
 
         const requestData = {
             store: visit.store,
@@ -99,11 +118,29 @@ Obrigado!`;
         window.open(createWhatsAppLink(null, message), '_blank');
     };
 
-    const handleJPChangeRequest = () => {
+    const handleJPChangeRequest = async () => {
+        const solicitation = {
+            consultant: user,
+            original_date: visit.date,
+            store_from: visit.store,
+            new_store: newStore,
+            new_time: `${newTime}-${newTimeEnd}`,
+            visit_type: visitType,
+            reason: reasonJP
+        };
+
+        const isDup = await checkDuplicateSolicitation(solicitation);
+        if (isDup) {
+            alert(`⚠️ BLOQUEIO DE DUPLICIDADE:\n\nJá existe uma solicitação de JP idêntica para esta visita (${visit.date} - ${visit.store}) aguardando aprovação.`);
+            return;
+        }
+
         if (hasPendingJP) {
             const confirmResend = window.confirm("Você já solicitou alteração de JP para esta visita. Deseja enviar novamente?");
             if (!confirmResend) return;
         }
+
+        await saveSolicitation(solicitation);
 
         const requestData = {
             originalStore: visit.store,

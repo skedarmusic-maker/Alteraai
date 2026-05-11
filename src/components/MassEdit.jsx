@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import { createWhatsAppLink, CONTACTS } from '../utils/whatsapp';
 import { logToSheet } from '../utils/logger';
+import { checkDuplicateSolicitation, saveSolicitation } from '../utils/supabase';
 import './MassEdit.css';
 
 export default function MassEdit({ visits, availableStores, onBack, user, mode = 'jp' }) {
@@ -107,7 +108,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
         return message;
     };
 
-    const handleRequestToManuela = () => {
+    const handleRequestToManuela = async () => {
         if (selectedVisits.length === 0) return;
 
         if (hasRequestSent) {
@@ -115,74 +116,99 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             if (!confirmResend) return;
         }
 
-        visits.forEach((group) => {
-            group.visits.forEach((visit, vIdx) => {
+        const duplicatesFound = [];
+        const toProcess = [];
+
+        // 1. Verificar duplicidades no Supabase primeiro
+        for (const group of visits) {
+            for (let vIdx = 0; vIdx < group.visits.length; vIdx++) {
+                const visit = group.visits[vIdx];
                 const uniqueId = `${group.dateStr}-${vIdx}`;
+                
                 if (selectedVisits.includes(uniqueId)) {
                     const edit = edits[uniqueId];
                     if (edit) {
-                        const visitKey = `${group.dateStr}-${visit.store}`;
+                        const solicitation = {
+                            consultant: user,
+                            original_date: group.dateStr,
+                            store_from: visit.store,
+                            new_store: edit.newStore || visit.store,
+                            new_time: (mode === 'jp') 
+                                ? ((edit.newStartTime && edit.newEndTime) ? `${edit.newStartTime}-${edit.newEndTime}` : `${visit.checkIn}-${visit.checkOut}`)
+                                : `${edit.newStartTime}-${edit.newEndTime}`,
+                            visit_type: edit.visitType || (mode === 'time' ? 'Alteração Horário' : ''),
+                            reason: edit.reason
+                        };
 
-                        if (mode === 'jp') {
-                            const newTimeFormatted = (edit.newStartTime && edit.newEndTime) ? `${edit.newStartTime}-${edit.newEndTime}` : `${visit.checkIn}-${visit.checkOut}`;
-                            logToSheet({
-                                consultant: user,
-                                type: 'Massa JP',
-                                originalDate: group.dateStr,
-                                originalTime: `${visit.checkIn}-${visit.checkOut}`,
-                                storeFrom: visit.store,
-                                storeTo: edit.newStore,
-                                newDate: group.dateStr,
-                                newTime: newTimeFormatted,
-                                visitType: edit.visitType,
-                                reason: edit.reason
-                            });
-
-                            const requestData = {
-                                originalStore: visit.store,
-                                newStore: edit.newStore,
-                                newTime: edit.newStartTime || visit.checkIn,
-                                newTimeEnd: edit.newEndTime || visit.checkOut,
-                                newDate: group.dateStr,
-                                visitType: edit.visitType,
-                                timestamp: new Date().toISOString(),
-                                isMassEdit: true
-                            };
-                            localStorage.setItem(`pendingJPChange-${visitKey}`, JSON.stringify(requestData));
-
+                        const isDup = await checkDuplicateSolicitation(solicitation);
+                        if (isDup) {
+                            duplicatesFound.push(`${group.dateStr} - ${visit.store}`);
                         } else {
-                            // TIME MODE
-                            const newTimeFormatted = `${edit.newStartTime}-${edit.newEndTime}`;
-                            logToSheet({
-                                consultant: user,
-                                type: 'Massa Horário',
-                                originalDate: group.dateStr,
-                                originalTime: `${visit.checkIn}-${visit.checkOut}`,
-                                storeFrom: visit.store,
-                                storeTo: visit.store, // Store unchanged
-                                newDate: group.dateStr,
-                                newTime: newTimeFormatted,
-                                visitType: 'Alteração Horário',
-                                reason: edit.reason
-                            });
-
-                            const requestData = {
-                                originalTime: `${visit.checkIn} - ${visit.checkOut}`,
-                                newTime: newTimeFormatted,
-                                timestamp: new Date().toISOString(),
-                                isMassEdit: true
-                            };
-                            localStorage.setItem(`pendingTimeChange-${visitKey}`, JSON.stringify(requestData));
+                            toProcess.push({ visit, group, edit, solicitation, uniqueId });
                         }
                     }
                 }
+            }
+        }
+
+        if (duplicatesFound.length > 0) {
+            alert(`⚠️ BLOQUEIO DE DUPLICIDADE:\n\nAs seguintes solicitações já foram enviadas anteriormente e ainda estão pendentes:\n\n${duplicatesFound.join('\n')}\n\nO sistema não permite enviar o mesmo pedido duas vezes.`);
+            
+            if (toProcess.length === 0) return;
+
+            const proceed = window.confirm(`Deseja prosseguir enviando apenas as outras ${toProcess.length} solicitações que são novas?`);
+            if (!proceed) return;
+        }
+
+        // 2. Processar apenas as que não são duplicadas
+        for (const item of toProcess) {
+            const { visit, group, edit, solicitation, uniqueId } = item;
+            const visitKey = `${group.dateStr}-${visit.store}`;
+
+            // Salvar no Supabase
+            await saveSolicitation(solicitation);
+
+            // Log na Planilha
+            logToSheet({
+                consultant: user,
+                type: mode === 'jp' ? 'Massa JP' : 'Massa Horário',
+                originalDate: group.dateStr,
+                originalTime: `${visit.checkIn}-${visit.checkOut}`,
+                storeFrom: visit.store,
+                storeTo: solicitation.new_store,
+                newDate: group.dateStr,
+                newTime: solicitation.new_time,
+                visitType: solicitation.visit_type,
+                reason: solicitation.reason
             });
-        });
+
+            // LocalStorage para controle de interface
+            const requestData = (mode === 'jp') ? {
+                originalStore: visit.store,
+                newStore: edit.newStore,
+                newTime: edit.newStartTime || visit.checkIn,
+                newTimeEnd: edit.newEndTime || visit.checkOut,
+                newDate: group.dateStr,
+                visitType: edit.visitType,
+                timestamp: new Date().toISOString(),
+                isMassEdit: true
+            } : {
+                originalTime: `${visit.checkIn} - ${visit.checkOut}`,
+                newTime: solicitation.new_time,
+                timestamp: new Date().toISOString(),
+                isMassEdit: true
+            };
+            localStorage.setItem(mode === 'jp' ? `pendingJPChange-${visitKey}` : `pendingTimeChange-${visitKey}`, JSON.stringify(requestData));
+        }
+
+        // 3. Montar mensagem apenas com o que foi realmente processado
+        // Temporariamente filtramos selectedVisits para o buildMessage
+        const originalSelected = [...selectedVisits];
+        setSelectedVisits(toProcess.map(p => p.uniqueId));
 
         const message = buildMessage(false);
-        // Open WhatsApp with Manuela contact
         window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
-        // Mark request as sent
+
         setHasRequestSent(true);
         setIsSent(true);
         localStorage.setItem(mode === 'time' ? 'hasPendingMassTimeRequest' : 'hasPendingMassRequest', 'true');
