@@ -170,10 +170,12 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             });
         });
 
+        const message = buildMessage(false);
         // Open WhatsApp with Manuela contact
         window.open(createWhatsAppLink(CONTACTS.MANUELA, message), '_blank');
         // Mark request as sent
         setHasRequestSent(true);
+        setIsSent(true);
         localStorage.setItem(mode === 'time' ? 'hasPendingMassTimeRequest' : 'hasPendingMassRequest', 'true');
     };
 
