@@ -27,6 +27,15 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
             delete newEdits[uniqueId];
             setEdits(newEdits);
         } else {
+            if (selectedVisits.length === 0) {
+                setHasRequestSent(false);
+                setHasExecutionSent(false);
+                setIsSent(false);
+                localStorage.removeItem('hasPendingMassRequest');
+                localStorage.removeItem('hasPendingMassTimeRequest');
+                localStorage.removeItem('hasPendingMassExecution');
+                localStorage.removeItem('hasPendingMassTimeExecution');
+            }
             setSelectedVisits([...selectedVisits, uniqueId]);
             setEdits({
                 ...edits,
