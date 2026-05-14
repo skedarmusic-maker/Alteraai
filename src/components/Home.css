@@ -155,9 +155,10 @@
 .timeline-actions {
     display: flex;
     justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 24px;
     position: relative;
-    /* Context for absolute modal */
 }
 
 .mass-edit-btn {
@@ -176,6 +177,25 @@
 
 .mass-edit-btn:hover {
     background: rgba(106, 10, 170, 0.1);
+}
+
+.materiais-btn {
+    background: transparent;
+    border: 1px solid #8b5cf6;
+    color: #a78bfa;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.materiais-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    color: #c4b5fd;
 }
 
 .visit-item {

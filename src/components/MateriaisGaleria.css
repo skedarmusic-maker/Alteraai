@@ -1,0 +1,405 @@
+/* ================================================================
+   MateriaisGaleria.css
+   ================================================================ */
+
+.materiais-container {
+    min-height: 100vh;
+    background: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+.materiais-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.materiais-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8e8f0;
+    flex: 1;
+}
+
+.materiais-header-title svg {
+    color: #8b5cf6;
+}
+
+.readonly-badge {
+    font-size: 11px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.07);
+    border: none;
+    color: #a0a0b0;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #e8e8f0;
+}
+
+/* ── Loading ──────────────────────────────────────────────────── */
+.materiais-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 80px 20px;
+    color: #888;
+}
+
+.loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(139, 92, 246, 0.2);
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Filtros ──────────────────────────────────────────────────── */
+.materiais-filtros {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.materiais-filtros::-webkit-scrollbar { display: none; }
+
+.filtro-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.filtro-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: #ccc;
+}
+
+.filtro-btn.ativo {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+/* ── Grid de Materiais ────────────────────────────────────────── */
+.materiais-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 16px 20px 32px;
+}
+
+.material-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+}
+
+.material-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Thumbnail */
+.material-card-thumb {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+.thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.05));
+}
+
+.paginas-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #ccc;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+}
+
+/* Info */
+.material-card-info {
+    padding: 14px 16px 10px;
+    flex: 1;
+}
+
+.material-categoria {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8b5cf6;
+    font-weight: 700;
+}
+
+.material-titulo {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e8e8f0;
+    margin: 4px 0 6px;
+    line-height: 1.4;
+}
+
+.material-descricao {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Action */
+.material-card-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+/* ── Viewer Overlay ───────────────────────────────────────────── */
+.viewer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Toolbar */
+.viewer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.viewer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.viewer-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e8e8f0;
+}
+
+.viewer-pagina {
+    font-size: 11px;
+    color: #666;
+}
+
+.viewer-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.viewer-controls button {
+    background: rgba(255, 255, 255, 0.07);
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.viewer-controls button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.viewer-close {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    margin-left: 8px;
+}
+
+.viewer-close:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Canvas */
+.viewer-canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.viewer-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Navegação */
+.viewer-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.nav-dots {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 50%;
+}
+
+.nav-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.nav-dot.ativo {
+    background: #8b5cf6;
+    transform: scale(1.4);
+}
+
+/* ── Empty ────────────────────────────────────────────────────── */
+.materiais-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #555;
+    font-size: 14px;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .materiais-grid {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .viewer-toolbar {
+        padding: 10px 12px;
+    }
+
+    .nav-dots {
+        max-width: 40%;
+    }
+
+    .nav-dot {
+        width: 5px;
+        height: 5px;
+    }
+}

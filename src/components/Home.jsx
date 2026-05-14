@@ -4,10 +4,11 @@ import DateCard from './DateCard';
 import MassEdit from './MassEdit';
 import VisitDetailModal from './VisitDetailModal';
 import { parse, format, isSameDay, isToday as checkIsToday, compareAsc } from 'date-fns';
-import { LogOut, ListChecks, LayoutDashboard } from 'lucide-react';
+import { LogOut, ListChecks, LayoutDashboard, BookOpen } from 'lucide-react';
 import AddVisitModal from './AddVisitModal';
 import './Home.css';
 import AdminDashboard from './AdminDashboard';
+import MateriaisGaleria from './MateriaisGaleria';
 import { supabase } from '../utils/supabase';
 
 export default function Home({ user, onLogout }) {
@@ -20,6 +21,7 @@ export default function Home({ user, onLogout }) {
     // Add Visit State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedDateForAdd, setSelectedDateForAdd] = useState(null);
+    const [showMateriais, setShowMateriais] = useState(false);
     const todayRef = useRef(null);
 
     const ADMINS = ['GABRIEL', 'MANUELA', 'GABRIEL AMORIM', 'MASTERPRO2026', 'MASTER', 'SMASTERPRO'];
@@ -221,6 +223,10 @@ export default function Home({ user, onLogout }) {
         return <AdminDashboard onBack={() => setShowDashboard(false)} />;
     }
 
+    if (showMateriais) {
+        return <MateriaisGaleria user={user} onBack={() => setShowMateriais(false)} />;
+    }
+
     return (
         <div className="home-container">
             {/* DEBUG OVERLAY */}
@@ -243,6 +249,13 @@ export default function Home({ user, onLogout }) {
                         <ListChecks size={20} />
                         ALTERAÇÃO EM MASSA
                     </button>
+                    {/* 🔒 FASE DE TESTES — liberar para todos após aprovação do Paulo */}
+                    {(user?.toUpperCase().includes('PAULO') || isAdmin) && (
+                        <button className="materiais-btn" onClick={() => setShowMateriais(true)}>
+                            <BookOpen size={20} />
+                            MATERIAIS
+                        </button>
+                    )}
                     {massEditMode === 'selection_choice' && (
                         <div className="mass-mode-overlay">
                             <div className="mass-mode-card">
