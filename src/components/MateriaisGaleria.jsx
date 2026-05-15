@@ -337,13 +337,24 @@ export default function MateriaisGaleria({ user, onBack }) {
                             </div>
                         </div>
 
-                        {/* Canvas */}
-                        <div className="viewer-canvas-wrap">
-                            <canvas
-                                ref={canvasRef}
-                                className="viewer-canvas"
-                                onContextMenu={handleContextMenu}
-                            />
+                        {/* Canvas + Descrição */}
+                        <div className="viewer-content-scroll">
+                            <div className="viewer-canvas-wrap">
+                                <canvas
+                                    ref={canvasRef}
+                                    className="viewer-canvas"
+                                    onContextMenu={handleContextMenu}
+                                />
+                            </div>
+                            
+                            {viewerGrupo.descricao && (
+                                <div className="viewer-description-box">
+                                    <h3>Informações Adicionais</h3>
+                                    <p dangerouslySetInnerHTML={{ 
+                                        __html: viewerGrupo.descricao.replace(/\n/g, '<br/>').replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>') 
+                                    }} />
+                                </div>
+                            )}
                         </div>
 
                         {/* Navegação de páginas */}
