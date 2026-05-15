@@ -79,6 +79,9 @@ export default function MateriaisGaleria({ user, onBack }) {
     }, [signedUrls]);
 
     // Renderizar imagem + marca d'água no canvas
+    const drawCanvas = useCallback((img, canvasEl, userName, zoom) => {
+        if (!canvasEl || !img) return;
+
         const ratio = window.devicePixelRatio || 1;
         const W = canvasEl.clientWidth;
         const H = canvasEl.clientHeight;
@@ -110,8 +113,7 @@ export default function MateriaisGaleria({ user, onBack }) {
         drawX = (W - drawW) / 2;
         drawY = (H - drawH) / 2;
 
-        // Renderiza com suavização de imagem desabilitada para máxima nitidez de texto se necessário,
-        // mas aqui vamos manter o padrão que o ratio já resolve.
+        // Renderiza com suavização de imagem desabilitada para máxima nitidez de texto
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
