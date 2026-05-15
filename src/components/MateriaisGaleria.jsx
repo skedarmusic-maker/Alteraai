@@ -79,12 +79,16 @@ export default function MateriaisGaleria({ user, onBack }) {
     }, [signedUrls]);
 
     // Renderizar imagem + marca d'água no canvas
-    const drawCanvas = useCallback((img, canvasEl, userName, zoom) => {
-        if (!canvasEl || !img) return;
-
-        const W = canvasEl.width;
-        const H = canvasEl.height;
+        const ratio = window.devicePixelRatio || 1;
+        const W = canvasEl.clientWidth;
+        const H = canvasEl.clientHeight;
+        
+        // Ajusta a resolução interna do canvas para a densidade do celular
+        canvasEl.width = W * ratio;
+        canvasEl.height = H * ratio;
+        
         const ctx = canvasEl.getContext('2d');
+        ctx.scale(ratio, ratio);
 
         ctx.clearRect(0, 0, W, H);
         ctx.fillStyle = '#0a0a0f';
@@ -106,6 +110,11 @@ export default function MateriaisGaleria({ user, onBack }) {
         drawX = (W - drawW) / 2;
         drawY = (H - drawH) / 2;
 
+        // Renderiza com suavização de imagem desabilitada para máxima nitidez de texto se necessário,
+        // mas aqui vamos manter o padrão que o ratio já resolve.
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
         // ── Marca d'água ──────────────────────────────────────────────────
@@ -123,8 +132,8 @@ export default function MateriaisGaleria({ user, onBack }) {
         const step = 260;
         ctx.rotate(-Math.PI / 6); // -30°
 
-        for (let y = -H; y < W + H; y += step) {
-            for (let x = -W; x < W + H; x += step) {
+        for (let y = -H * 2; y < W * 2; y += step) {
+            for (let x = -W * 2; x < W * 2; x += step) {
                 ctx.fillText(watermarkText, x, y);
             }
         }
@@ -173,14 +182,10 @@ export default function MateriaisGaleria({ user, onBack }) {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
 
-                // Ajustar canvas ao container
-                const container = canvas.parentElement;
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
-
                 // Animar (re-desenha a cada segundo para atualizar horário na marca d'água)
                 const loop = () => {
                     drawCanvas(img, canvas, user, zoom);
+                    // Não precisa de loop de 1s se o zoom não mudar, mas mantemos para o relógio
                     animFrameRef.current = setTimeout(loop, 1000);
                 };
                 if (animFrameRef.current) clearTimeout(animFrameRef.current);
