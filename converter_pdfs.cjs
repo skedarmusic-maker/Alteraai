@@ -17,7 +17,7 @@ async function convertPdf(pdfPath) {
     const fileName = path.basename(pdfPath, '.pdf');
     console.log(`\n📄 Convertendo: ${fileName}`);
 
-    const doc = await pdf(pdfPath, { scale: 2.5 });
+    const doc = await pdf(pdfPath, { scale: 5.0 });
     const numPages = doc.length;
     console.log(`   ${numPages} página(s)`);
 

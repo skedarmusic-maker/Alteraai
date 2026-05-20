@@ -86,6 +86,14 @@ const GRUPOS = [
         ordem: 6,
         matchFn: f => f.includes('Webcontinental'),
     },
+    {
+        grupo: 'tabela_pontos_central_ar',
+        categoria: 'Tabela de Pontos',
+        titulo: 'Tabela de Pontos AC Maio/26 - Central Ar',
+        descricao: 'Tabela de pontos AC - Central Ar - Maio 2026',
+        ordem: 7,
+        matchFn: f => f.includes('Central_Ar'),
+    },
 ];
 
 function getPageNum(filename) {
