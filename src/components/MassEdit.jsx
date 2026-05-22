@@ -326,7 +326,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
 
                                 return (
                                     <tr key={uniqueId}>
-                                        <td>
+                                        <td className="cell-original-info">
                                             <div className="cell-date">{group.dateStr}</div>
                                             <div className="cell-time" style={{ fontSize: '0.8rem', opacity: 0.7 }}>
                                                 {mode === 'jp' ? `${visit.checkIn} - ${visit.checkOut}` : visit.store}
@@ -336,7 +336,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
 
                                         {mode === 'jp' ? (
                                             <>
-                                                <td className="highlight-cell">
+                                                <td className="highlight-cell" data-label="Nova Loja">
                                                     <select
                                                         value={edit?.newStore || ''}
                                                         onChange={(e) => handleEditChange(uniqueId, 'newStore', e.target.value)}
@@ -347,14 +347,13 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
                                                         ))}
                                                     </select>
                                                 </td>
-                                                <td>
+                                                <td data-label="Novo Horário">
                                                     <div className="time-edit-group">
                                                         <input
                                                             type="time"
                                                             value={edit?.newStartTime || ''}
                                                             onChange={(e) => handleEditChange(uniqueId, 'newStartTime', e.target.value)}
                                                             className="time-input-mini"
-                                                            style={{ marginBottom: '4px' }}
                                                         />
                                                         <input
                                                             type="time"
@@ -364,7 +363,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
                                                         />
                                                     </div>
                                                 </td>
-                                                <td>
+                                                <td data-label="Tipo de Visita">
                                                     <select
                                                         value={edit?.visitType || ''}
                                                         onChange={(e) => handleEditChange(uniqueId, 'visitType', e.target.value)}
@@ -377,7 +376,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
                                             </>
                                         ) : (
                                             <>
-                                                <td className="highlight-cell">
+                                                <td className="highlight-cell" data-label="Novo Início">
                                                     <input
                                                         type="time"
                                                         value={edit?.newStartTime || ''}
@@ -385,7 +384,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
                                                         className="time-input"
                                                     />
                                                 </td>
-                                                <td className="highlight-cell">
+                                                <td className="highlight-cell" data-label="Novo Fim">
                                                     <input
                                                         type="time"
                                                         value={edit?.newEndTime || ''}
@@ -396,7 +395,7 @@ export default function MassEdit({ visits, availableStores, onBack, user, mode =
                                             </>
                                         )}
 
-                                        <td>
+                                        <td data-label="Motivo da Alteração">
                                             <textarea
                                                 value={edit?.reason || ''}
                                                 onChange={(e) => handleEditChange(uniqueId, 'reason', e.target.value)}

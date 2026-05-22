@@ -198,8 +198,168 @@
     box-shadow: 0 4px 15px rgba(106, 10, 170, 0.4);
 }
 
+
 .primary-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
+}
+
+/* Estilo desktop para os inputs de tempo pequenos */
+.time-input-mini {
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: inherit;
+    width: 100%;
+}
+.time-input-mini:first-child {
+    margin-bottom: 4px;
+}
+
+/* ==========================================================================
+   Estilos Responsivos - Mobile
+   ========================================================================== */
+@media (max-width: 768px) {
+    .mass-edit-container {
+        padding: 12px;
+        padding-bottom: 120px;
+    }
+
+    .table-container {
+        overflow-x: visible; /* Sem necessidade de scroll lateral no mobile */
+    }
+
+    /* Transformação da Tabela em Cards */
+    .excel-table, 
+    .excel-table thead, 
+    .excel-table tbody, 
+    .excel-table th, 
+    .excel-table td, 
+    .excel-table tr {
+        display: block;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Ocultar cabeçalho original da tabela */
+    .excel-table thead {
+        display: none;
+    }
+
+    /* Estrutura do Cartão (Cada Linha da Tabela) */
+    .excel-table tbody tr {
+        background: #141414;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        transition: background-color 0.2s;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #181818;
+    }
+
+    /* Cabeçalho do Cartão (Data/Loja Original) */
+    .excel-table td.cell-original-info {
+        background: rgba(106, 10, 170, 0.15) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        margin: -16px -16px 12px -16px !important;
+        padding: 12px 16px !important;
+        border-radius: 11px 11px 0 0 !important;
+        text-align: left;
+        display: block;
+    }
+
+    /* Células de Campos no Card */
+    .excel-table td {
+        border: none !important;
+        padding: 10px 0 !important;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: transparent !important; /* Remove fundo amarelo do highlight do desktop */
+    }
+
+    /* Exibição dos Rótulos no Mobile */
+    .excel-table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--color-primary-pink);
+        letter-spacing: 0.6px;
+        margin-bottom: 2px;
+    }
+
+    /* Ocultar rótulo da info original */
+    .excel-table td.cell-original-info::before {
+        display: none !important;
+    }
+
+    /* Campos de Entrada Mobile (Select, Textarea e Inputs) */
+    .excel-table select,
+    .excel-table textarea,
+    .excel-table input[type="time"] {
+        display: block;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        padding: 11px 12px !important;
+        color: white !important;
+        font-family: inherit;
+        font-size: 0.9rem !important;
+        box-sizing: border-box;
+        transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    /* Setinha elegante personalizada para selects no mobile */
+    .excel-table select {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 16px !important;
+        padding-right: 40px !important;
+    }
+
+    /* Garantir modo escuro nativo no widget de hora dos browsers móveis */
+    .excel-table input[type="time"] {
+        color-scheme: dark;
+        cursor: pointer;
+    }
+
+    /* Foco dos Campos */
+    .excel-table select:focus,
+    .excel-table textarea:focus,
+    .excel-table input[type="time"]:focus {
+        border-color: var(--color-primary-purple) !important;
+        background: rgba(106, 10, 170, 0.12) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(106, 10, 170, 0.25) !important;
+    }
+
+    /* Área de texto para o motivo */
+    .excel-table textarea {
+        min-height: 60px;
+        resize: vertical;
+    }
+
+    /* Inputs de horário em linha no cartão */
+    .time-edit-group {
+        display: flex !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    .time-edit-group .time-input-mini {
+        flex: 1 !important;
+        margin-bottom: 0 !important;
+    }
 }
