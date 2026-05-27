@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const supabaseUrl = 'https://vpvdprunhcvaztrqewjp.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwdmRwcnVuaGN2YXp0cnFld2pwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTUxMjQwOSwiZXhwIjoyMDg3MDg4NDA5fQ.myL7Xg_npoGpbclk0jc-H95H6POrNWFFtwA5SweL8N4';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const FINAI_DIR = path.join(__dirname, 'PDFs', 'finais');
@@ -34,7 +34,7 @@ Todos devem justificar os atendimentos programados do período da manhã, e segu
 
 async function run() {
     const filePath = path.join(FINAI_DIR, FILE_NAME);
-    
+
     if (!fs.existsSync(filePath)) {
         console.error(`❌ Erro: O arquivo ${FILE_NAME} não foi encontrado na pasta PDFs/finais/`);
         console.log('Por favor, salve a imagem enviada com esse nome exato.');
@@ -58,7 +58,7 @@ async function run() {
 
     // 2. Limpar anterior e Inserir Tabela
     await supabase.from('materiais').delete().eq('material_grupo', DATA.id);
-    
+
     const { error: dbErr } = await supabase.from('materiais').insert({
         titulo: DATA.titulo,
         descricao: DATA.descricao,

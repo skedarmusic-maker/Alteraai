@@ -6,7 +6,7 @@ const supabaseUrl = 'https://vpvdprunhcvaztrqewjp.supabase.co';
 const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwdmRwcnVuaGN2YXp0cnFld2pwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTUxMjQwOSwiZXhwIjoyMDg3MDg4NDA5fQ.myL7Xg_npoGpbclk0jc-H95H6POrNWFFtwA5SweL8N4';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const CSV_FILE = 'public/JP_JANEIRO 2026.csv';
+const CSV_FILE = 'public/Journey Maio primeira semana.csv';
 
 const importVisits = async () => {
     console.log(`📖 Lendo o arquivo: ${CSV_FILE}...`);
@@ -32,35 +32,54 @@ const importVisits = async () => {
     const rows = results.data;
     console.log(`✅ ${rows.length} registros encontrados.`);
 
-    // Converter para formato que o Supabase aceita
+    // Converter para formato que o Supabase aceita (YYYY-MM-DD)
     const mappedRows = rows.map(row => {
-        let cleanDate = row.data || '';
+        let cleanDate = (row.data || '').trim();
         if (cleanDate.includes('/')) {
-            const [d, m, y] = cleanDate.split('/');
-            cleanDate = `${y}-${m}-${d}`;
+            const parts = cleanDate.split('/');
+            if (parts.length === 3) {
+                const [d, m, y] = parts;
+                // Forçar 2 dígitos para d e m
+                const day = d.padStart(2, '0');
+                const month = m.padStart(2, '0');
+                cleanDate = `${y}-${month}-${day}`;
+            }
         }
+
+        // Limpar horários (remover segundos se houver)
+        let checkIn = (row.check_in || '').trim();
+        if (checkIn.split(':').length === 3) {
+            checkIn = checkIn.substring(0, 5);
+        }
+
+        let checkOut = (row.check_out || '').trim();
+        if (checkOut.split(':').length === 3) {
+            checkOut = checkOut.substring(0, 5);
+        }
+
         return {
             data: cleanDate,
-            dia_da_semana: row.dia_da_semana || '',
-            consultor: row.consultor || '',
-            cliente: row.cliente || '',
-            loja: row.loja || '',
-            check_in: row.check_in || '',
-            check_out: row.check_out || ''
+            dia_da_semana: (row.dia_da_semana || '').trim(),
+            consultor: (row.consultor || '').trim(),
+            cliente: (row.cliente || '').trim(),
+            loja: (row.loja || '').trim(),
+            check_in: checkIn,
+            check_out: checkOut
         };
     });
 
     console.log('🧹 Limpando tabela de visitas antiga...');
+    // Vamos deletar todas as visitas para garantir que não haja duplicatas ou lixo
     const { error: deleteError } = await supabase
         .from('visits')
         .delete()
-        .neq('data', '1900-01-01'); // Hack to bypass RLS and delete all
+        .neq('id', 0); // Delete everything
 
     if (deleteError) {
-        console.warn('⚠️ Nota sobre limpeza:', deleteError.message);
-    } else {
-        console.log('✨ Tabela de visitas limpa.');
+        console.error('❌ Erro ao limpar tabela:', deleteError.message);
+        return;
     }
+    console.log('✨ Tabela de visitas limpa.');
 
     console.log(`📤 Enviando ${mappedRows.length} registros em lotes...`);
     const chunkSize = 100;

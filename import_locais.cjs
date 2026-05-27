@@ -3,8 +3,8 @@ const fs = require('fs');
 const Papa = require('papaparse');
 
 const supabaseUrl = 'https://vpvdprunhcvaztrqewjp.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwdmRwcnVuaGN2YXp0cnFld2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTI0MDksImV4cCI6MjA4NzA4ODQwOX0.WKx85-6gZtwqZDp2h6g6hul2TorumD5RCIG75RhK0Ws';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwdmRwcnVuaGN2YXp0cnFld2pwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTUxMjQwOSwiZXhwIjoyMDg3MDg4NDA5fQ.myL7Xg_npoGpbclk0jc-H95H6POrNWFFtwA5SweL8N4';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const CSV_FILE = 'C:/Users/Gabriel Amorim/Desktop/App alteração JP/public/BASE - Protrade I Samsung AC I Reestruturação.csv';
 
