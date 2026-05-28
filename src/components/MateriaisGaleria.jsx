@@ -1,14 +1,50 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw, Folder } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import './MateriaisGaleria.css';
+
+const CLIENTES_PASTAS = [
+    'BHP',
+    'Central Ar',
+    'Clima Rio',
+    'DIS',
+    'Friopeças',
+    'Monvizo',
+    'Poloar',
+    'Webcontinental',
+    'Uniar',
+    'Pro Tati',
+    'Geral'
+];
+
+const obterClienteDoMaterial = (material) => {
+    // Se a categoria for "Pro Tati", ela vai direto para a pasta "Pro Tati"
+    if (material.categoria === 'Pro Tati') return 'Pro Tati';
+
+    const titulo = (material.titulo || '').toLowerCase();
+    const grupo = (material.material_grupo || '').toLowerCase();
+    const desc = (material.descricao || '').toLowerCase();
+    
+    if (titulo.includes('monvizo') || grupo.includes('monvizo') || desc.includes('monvizo')) return 'Monvizo';
+    if (titulo.includes('central ar') || titulo.includes('central_ar') || grupo.includes('central_ar') || desc.includes('central ar') || desc.includes('central_ar')) return 'Central Ar';
+    if (titulo.includes('webcontinental') || grupo.includes('webcontinental') || desc.includes('webcontinental') || grupo.includes('email_web')) return 'Webcontinental';
+    if (titulo.includes('uniar') || grupo.includes('uniar') || desc.includes('uniar')) return 'Uniar';
+    if (titulo.includes('bhp') || grupo.includes('bhp') || desc.includes('bhp')) return 'BHP';
+    if (titulo.includes('clima rio') || titulo.includes('climario') || grupo.includes('clima_rio') || desc.includes('clima rio')) return 'Clima Rio';
+    if (titulo.includes('dis') || grupo.includes('dis') || desc.includes('dis')) return 'DIS';
+    if (titulo.includes('friopeças') || titulo.includes('friopecas') || grupo.includes('friopecas') || desc.includes('friopeças')) return 'Friopeças';
+    if (titulo.includes('poloar') || grupo.includes('poloar') || desc.includes('poloar')) return 'Poloar';
+    
+    return 'Geral';
+};
 
 export default function MateriaisGaleria({ user, onBack }) {
     const [materiais, setMateriais] = useState([]);
     const [grupos, setGrupos] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
+    const [clienteAtivo, setClienteAtivo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [viewer, setViewer] = useState(null); // { grupo, pagina }
     const canvasRef = useRef(null);
@@ -247,55 +283,101 @@ export default function MateriaisGaleria({ user, onBack }) {
                 </div>
             ) : (
                 <>
-                    {/* Filtro de categorias */}
-                    <div className="materiais-filtros">
-                        {categorias.map(cat => (
-                            <button
-                                key={cat}
-                                className={`filtro-btn ${categoriaAtiva === cat ? 'ativo' : ''}`}
-                                onClick={() => setCategoriaAtiva(cat)}
-                            >
-                                {cat === 'Tabela de Pontos' ? '📊' : cat === 'Comunicação' ? '📧' : '📁'} {cat}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Se nenhum cliente/pasta estiver aberto, renderiza as Pastas principais */}
+                    {clienteAtivo === null ? (
+                        <div className="materiais-grid-folders" style={{ marginTop: '16px' }}>
+                            <AnimatePresence>
+                                {CLIENTES_PASTAS.map((cliente, idx) => {
+                                    // Filtrar a partir do total de grupos de materiais
+                                    const materiaisDoCliente = grupos.filter(g => obterClienteDoMaterial(g) === cliente);
+                                    const totalArquivos = materiaisDoCliente.length;
+                                    return (
+                                        <motion.div
+                                            key={cliente}
+                                            className="cliente-folder-card"
+                                            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ delay: idx * 0.03 }}
+                                            onClick={() => setClienteAtivo(cliente)}
+                                        >
+                                            <div className="folder-back-glow" />
+                                            <div className="folder-icon-container">
+                                                <Folder size={44} className="folder-icon-svg" />
+                                                {totalArquivos > 0 && (
+                                                    <span className="folder-badge-count">{totalArquivos}</span>
+                                                )}
+                                            </div>
+                                            <div className="folder-card-info">
+                                                <h3 className="folder-client-name">{cliente}</h3>
+                                                <p className="folder-file-count">
+                                                    {totalArquivos === 0 
+                                                        ? 'Nenhum arquivo' 
+                                                        : totalArquivos === 1 
+                                                            ? '1 arquivo' 
+                                                            : `${totalArquivos} arquivos`}
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Se tiver uma pasta de cliente aberta, mostra a barra de navegação/voltar */}
+                            <div className="folder-navigation-bar">
+                                <button className="folder-back-btn" onClick={() => setClienteAtivo(null)}>
+                                    <ArrowLeft size={16} /> Voltar para Pastas
+                                </button>
+                                <div className="folder-current-path">
+                                    <span>Pastas</span>
+                                    <span className="path-separator">/</span>
+                                    <strong className="path-active">{clienteAtivo}</strong>
+                                </div>
+                            </div>
 
-                    {/* Grid de materiais */}
-                    <div className="materiais-grid">
-                        <AnimatePresence>
-                            {gruposFiltrados.map((grupo, idx) => (
-                                <motion.div
-                                    key={grupo.grupo}
-                                    className="material-card"
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    onClick={() => openViewer(grupo.grupo)}
-                                >
-                                    <div className="material-card-thumb">
-                                        <CapaPreview arquivoUrl={grupo.capa?.arquivo_url} getSignedUrl={getSignedUrl} />
-                                        {grupo.totalPaginas > 1 && (
-                                            <span className="paginas-badge">{grupo.totalPaginas} pág.</span>
-                                        )}
-                                    </div>
-                                    <div className="material-card-info">
-                                        <span className="material-categoria">{grupo.categoria}</span>
-                                        <h3 className="material-titulo">{grupo.titulo}</h3>
-                                        {grupo.descricao && (
-                                            <p className="material-descricao">{grupo.descricao}</p>
-                                        )}
-                                    </div>
-                                    <div className="material-card-action">
-                                        <ZoomIn size={16} /> Visualizar
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
+                            {/* Grid de materiais do cliente ativo */}
+                            <div className="materiais-grid">
+                                <AnimatePresence>
+                                    {grupos
+                                        .filter(g => obterClienteDoMaterial(g) === clienteAtivo)
+                                        .map((grupo, idx) => (
+                                            <motion.div
+                                                key={grupo.grupo}
+                                                className="material-card"
+                                                initial={{ opacity: 0, y: 16 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                onClick={() => openViewer(grupo.grupo)}
+                                            >
+                                                <div className="material-card-thumb">
+                                                    <CapaPreview arquivoUrl={grupo.capa?.arquivo_url} getSignedUrl={getSignedUrl} />
+                                                    {grupo.totalPaginas > 1 && (
+                                                        <span className="paginas-badge">{grupo.totalPaginas} pág.</span>
+                                                    )}
+                                                </div>
+                                                <div className="material-card-info">
+                                                    <span className="material-categoria">{grupo.categoria}</span>
+                                                    <h3 className="material-titulo">{grupo.titulo}</h3>
+                                                    {grupo.descricao && (
+                                                        <p className="material-descricao">{grupo.descricao}</p>
+                                                    )}
+                                                </div>
+                                                <div className="material-card-action">
+                                                    <ZoomIn size={16} /> Visualizar
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    }
+                                </AnimatePresence>
+                            </div>
 
-                    {gruposFiltrados.length === 0 && (
-                        <div className="materiais-empty">Nenhum material nesta categoria.</div>
+                            {grupos.filter(g => obterClienteDoMaterial(g) === clienteAtivo).length === 0 && (
+                                <div className="materiais-empty">Nenhum material nesta pasta.</div>
+                            )}
+                        </>
                     )}
                 </>
             )}

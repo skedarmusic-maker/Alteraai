@@ -422,11 +422,191 @@
     font-size: 14px;
 }
 
+/* ── Grid de Pastas e Cards de Pasta ── */
+.materiais-grid-folders {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 16px 20px 32px;
+}
+
+.cliente-folder-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 24px 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.cliente-folder-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(139, 92, 246, 0.45);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(255, 255, 255, 0.02));
+    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.15), 0 0 1px 1px rgba(139, 92, 246, 0.2);
+}
+
+.folder-back-glow {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.cliente-folder-card:hover .folder-back-glow {
+    opacity: 1;
+}
+
+.folder-icon-container {
+    position: relative;
+    margin-bottom: 14px;
+    transition: transform 0.25s ease;
+}
+
+.cliente-folder-card:hover .folder-icon-container {
+    transform: scale(1.1) rotate(-3deg);
+}
+
+.folder-icon-svg {
+    color: #8b5cf6;
+    filter: drop-shadow(0 4px 10px rgba(139, 92, 246, 0.4));
+}
+
+.folder-badge-count {
+    position: absolute;
+    top: -6px;
+    right: -10px;
+    background: #8b5cf6;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 2px solid #0a0a0f;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.folder-card-info {
+    z-index: 2;
+}
+
+.folder-client-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8e8f0;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+}
+
+.folder-file-count {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.cliente-folder-card:hover .folder-file-count {
+    color: #c4b5fd;
+}
+
+/* ── Barra de Navegação Interna de Pastas ── */
+.folder-navigation-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.folder-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #aaa;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.folder-back-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: #c4b5fd;
+}
+
+.folder-current-path {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #666;
+}
+
+.path-separator {
+    color: rgba(255, 255, 255, 0.15);
+}
+
+.path-active {
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
 /* ── Mobile ───────────────────────────────────────────────────── */
 @media (max-width: 480px) {
     .materiais-grid {
         grid-template-columns: 1fr;
         padding: 12px;
+    }
+
+    .materiais-grid-folders {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .cliente-folder-card {
+        padding: 16px 12px;
+        border-radius: 12px;
+    }
+
+    .folder-icon-svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .folder-client-name {
+        font-size: 13px;
+    }
+
+    .folder-file-count {
+        font-size: 11px;
+    }
+
+    .folder-navigation-bar {
+        padding: 10px 12px;
     }
 
     .viewer-toolbar {

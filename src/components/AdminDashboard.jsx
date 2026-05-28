@@ -3,7 +3,7 @@ import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
-import { saveAiReport, fetchAiReport } from '../utils/supabase';
+import { saveAiReport, fetchAiReport, supabase } from '../utils/supabase';
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { generateSummary } from '../utils/gemini';
 import { createWhatsAppLink, CONSULTANT_PHONES } from '../utils/whatsapp';
@@ -87,47 +87,127 @@ export default function AdminDashboard({ onBack }) {
         currentPage * ITEMS_PER_PAGE
     );
 
-    useEffect(() => {
-        const loadData = async () => {
-            let data = await fetchLogs();
+    const loadData = async () => {
+        let data = await fetchLogs();
 
-            // Helper to safely find property (case insensitive, trim spaces, partial matches)
-            const getVal = (obj, ...keys) => {
-                const objKeys = Object.keys(obj);
-                for (const key of keys) {
-                    const cleanKey = key.trim().toLowerCase();
-                    // 1. Try exact match (normalized)
-                    const found = objKeys.find(k => k.trim().toLowerCase() === cleanKey);
-                    if (found) return obj[found];
-                    // 2. Try partial match if exactly correct isn't found
-                    const partial = objKeys.find(k => k.trim().toLowerCase().includes(cleanKey));
-                    if (partial) return obj[partial];
-                }
-                return '';
-            };
-
-            // Normalize data (Handling Portuguese Headers from Sheets)
-            const normalized = (data || []).map((row, index) => ({
-                id: index + 2, // Fallback
-                gsRow: getVal(row, '__gs_row') || (index + 2), // Try get the real row
-                date: getVal(row, 'Data da Solicitação', 'Solicitação', 'date'),
-                consultant: getVal(row, 'Consultor', 'consultant'),
-                type: getVal(row, 'Tipo', 'type'),
-                originalDate: getVal(row, 'Data Original', 'orig'),
-                originalTime: getVal(row, 'Horário Original', 'Horário Orig'),
-                storeFrom: getVal(row, 'Loja Original', 'originalStore'),
-                storeTo: getVal(row, 'Nova Loja', 'newStore'),
-                newDate: getVal(row, 'Nova Data', 'nova_da'),
-                newTime: getVal(row, 'Novo Horário', 'novo_ho'),
-                visitType: getVal(row, 'Tipo de Visita', 'visitType', 'Tipo Visita'),
-                reason: getVal(row, 'Motivo', 'reason'),
-                status: getVal(row, 'Status', 'status')
-            }));
-
-            setRawLogs(normalized);
-            setLoading(false);
+        // Helper to safely find property (case insensitive, trim spaces, partial matches)
+        const getVal = (obj, ...keys) => {
+            const objKeys = Object.keys(obj);
+            for (const key of keys) {
+                const cleanKey = key.trim().toLowerCase();
+                // 1. Try exact match (normalized)
+                const found = objKeys.find(k => k.trim().toLowerCase() === cleanKey);
+                if (found) return obj[found];
+                // 2. Try partial match if exactly correct isn't found
+                const partial = objKeys.find(k => k.trim().toLowerCase().includes(cleanKey));
+                if (partial) return obj[partial];
+            }
+            return '';
         };
 
+        // Normalize data (Handling Portuguese Headers from Sheets)
+        const normalized = (data || []).map((row, index) => ({
+            id: index + 2, // Fallback
+            gsRow: getVal(row, '__gs_row') || (index + 2), // Try get the real row
+            date: getVal(row, 'Data da Solicitação', 'Solicitação', 'date'),
+            consultant: getVal(row, 'Consultor', 'consultant'),
+            type: getVal(row, 'Tipo', 'type'),
+            originalDate: getVal(row, 'Data Original', 'orig'),
+            originalTime: getVal(row, 'Horário Original', 'Horário Orig'),
+            storeFrom: getVal(row, 'Loja Original', 'originalStore'),
+            storeTo: getVal(row, 'Nova Loja', 'newStore'),
+            newDate: getVal(row, 'Nova Data', 'nova_da'),
+            newTime: getVal(row, 'Novo Horário', 'novo_ho'),
+            visitType: getVal(row, 'Tipo de Visita', 'visitType', 'Tipo Visita'),
+            reason: getVal(row, 'Motivo', 'reason'),
+            status: getVal(row, 'Status', 'status')
+        }));
+
+        setRawLogs(normalized);
+        setLoading(false);
+    };
+
+    // Realtime Notifications & Auto Reload
+    useEffect(() => {
+        // Solicitar permissão de Notificação no navegador
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Registrar canal do Supabase Realtime para a tabela de solicitações
+        const channel = supabase
+            .channel('public:solicitations')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'solicitations'
+                },
+                (payload) => {
+                    console.log('Nova solicitação detectada em tempo real:', payload);
+                    
+                    // 1. Recarregar os dados na hora (re-fetch)
+                    loadData();
+
+                    // 2. Disparar bip sonoro premium (usando a Web Audio API nativa)
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5 (bip agradável)
+                        gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                        
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.15);
+                        
+                        // Segundo bip rápido ascendente
+                        setTimeout(() => {
+                            const osc2 = audioCtx.createOscillator();
+                            const gain2 = audioCtx.createGain();
+                            osc2.connect(gain2);
+                            gain2.connect(audioCtx.destination);
+                            osc2.type = 'sine';
+                            osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime); // Nota A5
+                            gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                            osc2.start();
+                            osc2.stop(audioCtx.currentTime + 0.2);
+                        }, 120);
+                    } catch (audioErr) {
+                        console.warn('Erro ao reproduzir som de notificação:', audioErr);
+                    }
+
+                    // 3. Disparar a notificação de sistema nativa
+                    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                        const record = payload.new;
+                        const consultantName = record.consultant || 'Consultor';
+                        const originalStore = record.store_from || 'Loja';
+                        const changeType = record.visit_type || 'Alteração de rota';
+                        const reasonText = record.reason || 'Não informado';
+
+                        new Notification(`🔔 Nova Solicitação: ${consultantName}`, {
+                            body: `Tipo: ${changeType}\nLoja: ${originalStore}\nMotivo: ${reasonText}`,
+                            icon: '/favicon.ico',
+                            tag: 'solicitation-notification'
+                        });
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    useEffect(() => {
         const loadStoreData = async () => {
             try {
                 const data = await parseCSV('/BASE AC NOVA.csv');
