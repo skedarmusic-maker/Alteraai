@@ -33,10 +33,11 @@ jobs:
           set ftp:ssl-force true
           set ftp:ssl-protect-data true
           set ssl:verify-certificate no
-          set net:timeout 20
-          set net:max-retries 5
-          set net:reconnect-interval-base 5
+          set net:timeout 30
+          set net:max-retries 10
+          set net:reconnect-interval-base 10
           set ftp:passive-mode true
-          mirror -R --delete --verbose dist/ ./
+          set ftp:connection-limit 1
+          mirror -R --delete --verbose --parallel=1 dist/ ./
           quit
           EOF
