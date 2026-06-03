@@ -249,13 +249,10 @@ export default function Home({ user, onLogout }) {
                         <ListChecks size={20} />
                         ALTERAÇÃO EM MASSA
                     </button>
-                    {/* 🔒 FASE DE TESTES — liberar para todos após aprovação do Paulo */}
-                    {(user?.toUpperCase().includes('PAULO') || isAdmin) && (
-                        <button className="materiais-btn" onClick={() => setShowMateriais(true)}>
-                            <BookOpen size={20} />
-                            MATERIAIS
-                        </button>
-                    )}
+                    <button className="materiais-btn" onClick={() => setShowMateriais(true)}>
+                        <BookOpen size={20} />
+                        MATERIAIS
+                    </button>
                     {massEditMode === 'selection_choice' && (
                         <div className="mass-mode-overlay">
                             <div className="mass-mode-card">

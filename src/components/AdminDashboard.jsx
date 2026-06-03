@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink, ThumbsUp, ThumbsDown, Eye } from 'lucide-react';
+import { ArrowLeft, Activity, Users, Filter, X, Check, AlertCircle, ExternalLink, ThumbsUp, ThumbsDown, Eye, BookOpen } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from 'recharts';
 import { fetchLogs, updateLogStatus } from '../utils/logger';
 import { parseCSV } from '../utils/csv';
@@ -8,6 +8,7 @@ import { startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfDay, endOfDa
 import { generateSummary } from '../utils/gemini';
 import { createWhatsAppLink, CONSULTANT_PHONES } from '../utils/whatsapp';
 import ConsultantScheduleViewer, { CONSULTANTS } from './ConsultantScheduleViewer';
+import MateriaisGerenciador from './MateriaisGerenciador';
 import './AdminDashboard.css';
 
 
@@ -19,6 +20,7 @@ export default function AdminDashboard({ onBack }) {
 
     // Roteiro de consultor (visualizacao somente leitura)
     const [viewingConsultant, setViewingConsultant] = useState(null);
+    const [showMateriaisManager, setShowMateriaisManager] = useState(false);
     const [loading, setLoading] = useState(true);
     const [rawLogs, setRawLogs] = useState([]);
     const [storeToClientMap, setStoreToClientMap] = useState({});
@@ -643,6 +645,15 @@ export default function AdminDashboard({ onBack }) {
         );
     }
 
+    // Gerenciador de materiais - early return
+    if (showMateriaisManager) {
+        return (
+            <MateriaisGerenciador
+                onBack={() => setShowMateriaisManager(false)}
+            />
+        );
+    }
+
     if (loading) return <div className="loading-screen">Carregando Dashboard...</div>;
 
     return (
@@ -652,6 +663,31 @@ export default function AdminDashboard({ onBack }) {
                     <button onClick={onBack} className="back-btn"><ArrowLeft size={24} /></button>
                     <h2>Relatório de alterações JP</h2>
                 </div>
+                {(isMaster || isSuperMaster) && (
+                    <button 
+                        onClick={() => setShowMateriaisManager(true)} 
+                        className="manage-materials-header-btn"
+                        style={{
+                            background: 'rgba(253, 80, 3, 0.1)',
+                            border: '1px solid #FD5003',
+                            color: '#FD5003',
+                            padding: '8px 16px',
+                            borderRadius: '20px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginRight: '16px',
+                            fontSize: '0.9rem',
+                            transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = '#FD5003'; e.currentTarget.style.color = '#FFF'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(253, 80, 3, 0.1)'; e.currentTarget.style.color = '#FD5003'; }}
+                    >
+                        <BookOpen size={16} /> Gerenciar Materiais
+                    </button>
+                )}
                 <img src="/images/logoprotradepreto.png" alt="ProTrade Logo" className="dashboard-logo" />
             </header>
 
