@@ -37,7 +37,7 @@ jobs:
           set net:max-retries 10
           set net:reconnect-interval-base 10
           set ftp:passive-mode true
-          set ftp:connection-limit 1
+          set net:connection-limit 1
           mirror -R --delete --verbose --parallel=1 dist/ ./
           quit
           EOF
