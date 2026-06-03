@@ -4,19 +4,60 @@ import { supabase } from '../utils/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import './MateriaisGerenciador.css';
 
-const CLIENTES_LIST = [
-    'BHP',
-    'Central Ar',
-    'Clima Rio',
-    'DIS',
-    'Friopeças',
-    'Monvizo',
-    'Poloar',
-    'Webcontinental',
-    'Uniar',
-    'Pro Tati',
-    'Geral'
-];
+const obterClienteDoMaterial = (materialOrGroup) => {
+    // Se for um grupo, pega a primeira página
+    const m = materialOrGroup.paginas?.[0] || materialOrGroup.capaUrl || materialOrGroup;
+    
+    // Se a categoria no banco for um cliente customizado (que não seja 'Tabela de Pontos' ou 'Comunicação'), retorna ela mesma!
+    const cat = m.categoria;
+    if (cat && cat !== 'Tabela de Pontos' && cat !== 'Comunicação') {
+        return cat;
+    }
+
+    // Fallback para registros antigos (fuzzy matching)
+    const titulo = (m.titulo || '').toLowerCase();
+    const grupo = (m.material_grupo || m.grupo || '').toLowerCase();
+    const desc = (m.descricao || '').toLowerCase();
+    
+    if (titulo.includes('monvizo') || grupo.includes('monvizo') || desc.includes('monvizo')) return 'Monvizo';
+    if (titulo.includes('central ar') || titulo.includes('central_ar') || grupo.includes('central_ar') || desc.includes('central ar') || desc.includes('central_ar')) return 'Central Ar';
+    if (titulo.includes('webcontinental') || grupo.includes('webcontinental') || desc.includes('webcontinental') || grupo.includes('email_web')) return 'Webcontinental';
+    if (titulo.includes('uniar') || grupo.includes('uniar') || desc.includes('uniar')) return 'Uniar';
+    if (titulo.includes('bhp') || grupo.includes('bhp') || desc.includes('bhp')) return 'BHP';
+    if (titulo.includes('clima rio') || titulo.includes('climario') || grupo.includes('clima_rio') || desc.includes('clima rio')) return 'Clima Rio';
+    if (titulo.includes('dis') || grupo.includes('dis') || desc.includes('dis')) return 'DIS';
+    if (titulo.includes('friopeças') || titulo.includes('friopecas') || grupo.includes('friopecas') || desc.includes('friopeças')) return 'Friopeças';
+    if (titulo.includes('poloar') || grupo.includes('poloar') || desc.includes('poloar')) return 'Poloar';
+    if (titulo.includes('pro tati') || titulo.includes('protati') || cat === 'Pro Tati') return 'Pro Tati';
+    
+    return 'Geral';
+};
+
+const obterPastasDinamicamente = (listaGrupos) => {
+    const defaultPastas = [
+        'BHP',
+        'Central Ar',
+        'Clima Rio',
+        'DIS',
+        'Friopeças',
+        'Monvizo',
+        'Poloar',
+        'Webcontinental',
+        'Uniar',
+        'Pro Tati',
+        'Geral'
+    ];
+    
+    const pastasSet = new Set(defaultPastas);
+    listaGrupos.forEach(g => {
+        const cliente = obterClienteDoMaterial(g);
+        if (cliente) {
+            pastasSet.add(cliente);
+        }
+    });
+    
+    return Array.from(pastasSet);
+};
 
 // Helper para carregar PDF.js via CDN dinamicamente
 const loadPdfJs = () => {
@@ -43,6 +84,7 @@ export default function MateriaisGerenciador({ onBack }) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, status: '' });
     const [viewMode, setViewMode] = useState('list'); // 'list' ou 'add'
+    const [clienteAtivo, setClienteAtivo] = useState(null);
     
     // Form fields
     const [titulo, setTitulo] = useState('');
@@ -276,6 +318,7 @@ export default function MateriaisGerenciador({ onBack }) {
                 setDescricao('');
                 setOrdem(10);
                 setFile(null);
+                setClienteAtivo(finalCategoria); // Abre a pasta do cliente que acabou de receber o arquivo!
                 setViewMode('list');
                 loadMateriais();
             }, 1000);
@@ -297,9 +340,17 @@ export default function MateriaisGerenciador({ onBack }) {
                     <h2>Gerenciar Galeria de Materiais</h2>
                 </div>
                 {viewMode === 'list' && (
-                    <button onClick={() => setViewMode('add')} className="add-material-btn">
-                        <Plus size={18} /> Novo Material
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button 
+                            onClick={() => {
+                                setCategoria(clienteAtivo || 'Geral');
+                                setViewMode('add');
+                            }} 
+                            className="add-material-btn"
+                        >
+                            <Plus size={18} /> Novo Material
+                        </button>
+                    </div>
                 )}
             </header>
 
@@ -317,48 +368,112 @@ export default function MateriaisGerenciador({ onBack }) {
                                 <RefreshCw className="spin" size={32} />
                                 <p>Carregando materiais...</p>
                             </div>
-                        ) : grupos.length === 0 ? (
-                            <div className="manager-empty">
-                                <AlertCircle size={48} color="#FD5003" />
-                                <p>Nenhum material cadastrado na galeria ainda.</p>
-                                <button onClick={() => setViewMode('add')} className="add-material-btn-empty">
-                                    Adicionar Primeiro Material
-                                </button>
+                        ) : clienteAtivo === null ? (
+                            /* --- EXIBIÇÃO DE PASTAS --- */
+                            <div className="materiais-grid-folders" style={{ marginTop: '16px' }}>
+                                <AnimatePresence>
+                                    {obterPastasDinamicamente(grupos).map((cliente, idx) => {
+                                        const materiaisDoCliente = grupos.filter(g => obterClienteDoMaterial(g) === cliente);
+                                        const totalArquivos = materiaisDoCliente.length;
+                                        return (
+                                            <motion.div
+                                                key={cliente}
+                                                className="cliente-folder-card"
+                                                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ delay: idx * 0.03 }}
+                                                onClick={() => setClienteAtivo(cliente)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <div className="folder-back-glow" />
+                                                <div className="folder-icon-container">
+                                                    <Folder size={44} className="folder-icon-svg" />
+                                                    {totalArquivos > 0 && (
+                                                        <span className="folder-badge-count">{totalArquivos}</span>
+                                                    )}
+                                                </div>
+                                                <div className="folder-card-info">
+                                                    <h3 className="folder-client-name" style={{ margin: 0, fontSize: '1.1rem' }}>{cliente}</h3>
+                                                    <p className="folder-file-count" style={{ color: '#8E8E9F', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
+                                                        {totalArquivos === 0 
+                                                            ? 'Nenhum arquivo' 
+                                                            : totalArquivos === 1 
+                                                                ? '1 arquivo' 
+                                                                : `${totalArquivos} arquivos`}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
                             </div>
                         ) : (
-                            <div className="grupos-list-grid">
-                                {grupos.map((g) => (
-                                    <div key={g.grupo} className="grupo-manager-card">
-                                        <div className="card-media">
-                                            {signedUrls[g.capaUrl] ? (
-                                                <img src={signedUrls[g.capaUrl]} alt="Capa" />
-                                            ) : (
-                                                <div className="media-placeholder">
-                                                    <FileText size={32} />
-                                                </div>
-                                            )}
-                                            <span className="card-badge">{g.categoria}</span>
-                                        </div>
-                                        <div className="card-info">
-                                            <h4>{g.titulo}</h4>
-                                            <p className="desc">{g.descricao || 'Sem descrição'}</p>
-                                            <div className="card-meta">
-                                                <span>Páginas: <strong>{g.totalPaginas}</strong></span>
-                                                <span>Ordem: <strong>{g.ordem}</strong></span>
-                                            </div>
-                                        </div>
-                                        <div className="card-actions">
-                                            <button 
-                                                onClick={() => handleDelete(g)} 
-                                                className="delete-action-btn"
-                                                title="Excluir material completo"
-                                            >
-                                                <Trash2 size={16} /> Excluir
-                                            </button>
-                                        </div>
+                            /* --- EXIBIÇÃO DOS MATERIAIS DA PASTA --- */
+                            <>
+                                <div className="folder-navigation-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <button className="folder-back-btn" onClick={() => setClienteAtivo(null)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#FFF', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <ArrowLeft size={16} /> Voltar para Pastas
+                                    </button>
+                                    <div className="folder-current-path" style={{ display: 'flex', gap: '8px', fontSize: '0.95rem' }}>
+                                        <span style={{ color: '#888' }}>Pastas</span>
+                                        <span style={{ color: '#555' }}>/</span>
+                                        <strong style={{ color: '#FD5003' }}>{clienteAtivo}</strong>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+
+                                {grupos.filter(g => obterClienteDoMaterial(g) === clienteAtivo).length === 0 ? (
+                                    <div className="manager-empty">
+                                        <AlertCircle size={48} color="#FD5003" />
+                                        <p>Nenhum material cadastrado nesta pasta ainda.</p>
+                                        <button 
+                                            onClick={() => {
+                                                setCategoria(clienteAtivo);
+                                                setViewMode('add');
+                                            }} 
+                                            className="add-material-btn-empty"
+                                        >
+                                            Adicionar Material nesta Pasta
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grupos-list-grid">
+                                        {grupos
+                                            .filter(g => obterClienteDoMaterial(g) === clienteAtivo)
+                                            .map((g) => (
+                                                <div key={g.grupo} className="grupo-manager-card">
+                                                    <div className="card-media">
+                                                        {signedUrls[g.capaUrl] ? (
+                                                            <img src={signedUrls[g.capaUrl]} alt="Capa" />
+                                                        ) : (
+                                                            <div className="media-placeholder">
+                                                                <FileText size={32} />
+                                                            </div>
+                                                        )}
+                                                        <span className="card-badge">{g.categoria}</span>
+                                                    </div>
+                                                    <div className="card-info">
+                                                        <h4>{g.titulo}</h4>
+                                                        <p className="desc">{g.descricao || 'Sem descrição'}</p>
+                                                        <div className="card-meta">
+                                                            <span>Páginas: <strong>{g.totalPaginas}</strong></span>
+                                                            <span>Ordem: <strong>{g.ordem}</strong></span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="card-actions">
+                                                        <button 
+                                                            onClick={() => handleDelete(g)} 
+                                                            className="delete-action-btn"
+                                                            title="Excluir material completo"
+                                                        >
+                                                            <Trash2 size={16} /> Excluir
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </motion.div>
                 ) : (
@@ -404,7 +519,7 @@ export default function MateriaisGerenciador({ onBack }) {
                                         onChange={(e) => setCategoria(e.target.value)}
                                         disabled={isUploading}
                                     >
-                                        {CLIENTES_LIST.map(c => (
+                                        {obterPastasDinamicamente(grupos).map(c => (
                                             <option key={c} value={c}>{c}</option>
                                         ))}
                                         <option value="NOVA">Nova Pasta/Cliente...</option>

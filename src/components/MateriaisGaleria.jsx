@@ -4,27 +4,20 @@ import { supabase } from '../utils/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import './MateriaisGaleria.css';
 
-const CLIENTES_PASTAS = [
-    'BHP',
-    'Central Ar',
-    'Clima Rio',
-    'DIS',
-    'Friopeças',
-    'Monvizo',
-    'Poloar',
-    'Webcontinental',
-    'Uniar',
-    'Pro Tati',
-    'Geral'
-];
+const obterClienteDoMaterial = (materialOrGroup) => {
+    // Se for um grupo, pega a primeira página
+    const m = materialOrGroup.paginas?.[0] || materialOrGroup.capa || materialOrGroup;
+    
+    // Se a categoria no banco for um cliente customizado (que não seja 'Tabela de Pontos' ou 'Comunicação'), retorna ela mesma!
+    const cat = m.categoria;
+    if (cat && cat !== 'Tabela de Pontos' && cat !== 'Comunicação') {
+        return cat;
+    }
 
-const obterClienteDoMaterial = (material) => {
-    // Se a categoria for "Pro Tati", ela vai direto para a pasta "Pro Tati"
-    if (material.categoria === 'Pro Tati') return 'Pro Tati';
-
-    const titulo = (material.titulo || '').toLowerCase();
-    const grupo = (material.material_grupo || '').toLowerCase();
-    const desc = (material.descricao || '').toLowerCase();
+    // Fallback para registros antigos (fuzzy matching)
+    const titulo = (m.titulo || '').toLowerCase();
+    const grupo = (m.material_grupo || m.grupo || '').toLowerCase();
+    const desc = (m.descricao || '').toLowerCase();
     
     if (titulo.includes('monvizo') || grupo.includes('monvizo') || desc.includes('monvizo')) return 'Monvizo';
     if (titulo.includes('central ar') || titulo.includes('central_ar') || grupo.includes('central_ar') || desc.includes('central ar') || desc.includes('central_ar')) return 'Central Ar';
@@ -35,8 +28,36 @@ const obterClienteDoMaterial = (material) => {
     if (titulo.includes('dis') || grupo.includes('dis') || desc.includes('dis')) return 'DIS';
     if (titulo.includes('friopeças') || titulo.includes('friopecas') || grupo.includes('friopecas') || desc.includes('friopeças')) return 'Friopeças';
     if (titulo.includes('poloar') || grupo.includes('poloar') || desc.includes('poloar')) return 'Poloar';
+    if (titulo.includes('pro tati') || titulo.includes('protati') || cat === 'Pro Tati') return 'Pro Tati';
     
     return 'Geral';
+};
+
+const obterPastasDinamicamente = (listaGrupos) => {
+    const defaultPastas = [
+        'BHP',
+        'Central Ar',
+        'Clima Rio',
+        'DIS',
+        'Friopeças',
+        'Monvizo',
+        'Poloar',
+        'Webcontinental',
+        'Uniar',
+        'Pro Tati',
+        'Geral'
+    ];
+    
+    const pastasSet = new Set(defaultPastas);
+    
+    listaGrupos.forEach(g => {
+        const cliente = obterClienteDoMaterial(g);
+        if (cliente) {
+            pastasSet.add(cliente);
+        }
+    });
+    
+    return Array.from(pastasSet);
 };
 
 export default function MateriaisGaleria({ user, onBack }) {
@@ -287,7 +308,7 @@ export default function MateriaisGaleria({ user, onBack }) {
                     {clienteAtivo === null ? (
                         <div className="materiais-grid-folders" style={{ marginTop: '16px' }}>
                             <AnimatePresence>
-                                {CLIENTES_PASTAS.map((cliente, idx) => {
+                                {obterPastasDinamicamente(grupos).map((cliente, idx) => {
                                     // Filtrar a partir do total de grupos de materiais
                                     const materiaisDoCliente = grupos.filter(g => obterClienteDoMaterial(g) === cliente);
                                     const totalArquivos = materiaisDoCliente.length;
